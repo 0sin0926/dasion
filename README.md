@@ -1,36 +1,107 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI 기반 아이 주도형 기부 플랫폼 기획서
+---
 
-## Getting Started
+## 1. 프로젝트 개요
 
-First, run the development server:
+### 1.1 한 줄 정의
+음성으로 물건을 등록하면 AI가 기부 게시글과 감사 편지를 대신 써주고, 하나은행 ATM에서 집앞 수거까지 이어지는 **아동 물품 기부 플랫폼**.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### 1.2 문제 정의
+- 기존 기부는 최소 3박스 이상 모아야 수거되거나 직접 매장 방문이 필요해 절차가 번거로움
+- 기부의 주체가 부모이고, 정작 물건 주인인 아이는 기부 과정에서 소외됨
+- 기부 효능감을 체감하기 어려워 지속적인 기부로 이어지지 않음
+
+### 1.3 솔루션
+| 문제 | 해결 기능 |
+|---|---|
+| 절차 번거로움 | ATM 박스 수령 + 앱 신청 → 집앞 수거 |
+| 아이 소외 | 음성 인식으로 아이가 직접 물품 등록 |
+| 효능감 부재 | AI 감사 편지로 기부자-수혜자 정서적 교감 |
+| 기부 유인 부족 | 기부 횟수 연동 어린이 적금 우대금리 |
+
+---
+
+## 2. 핵심 사용자 (페르소나)
+
+1. **기부 아동 (6~8세)**: 글쓰기가 어려운 나이, 음성으로 물건 소개
+2. **기부 아동의 부모**: 절차 간소화 + 자녀 교육적 가치를 원함
+3. **수혜 아동 (취약계층)**: 기부받을 물건을 직접 선택하고 감사 편지 작성
+4. **하나은행**: ATM 활성화, 알파세대 잠재 고객(어린이 적금) 확보
+
+---
+
+## 3. 핵심 기능 (Feature List)
+
+### P0 — MVP 핵심
+ 
+| # | 기능 | 설명 |
+|---|---|---|
+| 1 | **하단 탭 네비게이션** | 홈 / 지역 / 기록 / 내 정보 4개 탭 구조 |
+| 2 | **홈 피드** | 물품 카드 리스트(이미지, 물품명, 지역, 기부 받기 버튼), 카테고리 필터(전체/의류/도서·문구류/장난감/스포츠/유아용/기타), 검색("어떤 물건을 찾으시나요?") |
+| 3 | **물품 등록 — 카테고리 선택** | 아이콘 그리드에서 카테고리 탭 선택 (👕 의류, 📚 도서·문구류, 🧸 장난감, ⚽️ 스포츠, 🍼 유아용, 📦 기타) |
+| 4 | **물품 등록 — 이름 입력** | 텍스트 인풋으로 물품 이름 작성 |
+| 5 | **물품 등록 — 음성 설명 → AI 텍스트 변환** | "아이가 직접 자신의 물품에 대해서 설명해보세요" — 녹음 버튼 → Whisper STT → 게시글 설명 텍스트로 저장 |
+| 6 | **물품 등록 — 사진 업로드** | 최대 5장까지 등록 (0/5 카운터 UI) |
+| 7 | **물품 등록 — 편지 작성** | "물품을 받을 친구에게 편지도 함께 전달해봐요" — 음성 녹음 → AI 텍스트 변환하여 편지로 저장 |
+| 8 | **물품 상세 + 기부 받기** | 카드 클릭 시 상세 화면, "기부 받기" 액션 |
+| 9 | **내 정보(마이페이지)** | 내가 등록/수령한 물품 확인 |
+ 
+### P1
+ 
+| # | 기능 | 설명 |
+|---|---|---|
+| 10 | **커뮤니티 통계 위젯** | 홈 화면 상단에 기부된 물품 수 / 참여 가정 수 / 나눔 완료 수 실시간(또는 집계) 노출 — 참여 유도 및 신뢰 구축 |
+| 11 | **지역 탭** | 지역별 물품 탐색 (인천 연수구, 송도, 서구 등 지역 단위 필터/리스트) |
+| 12 | **기록 탭** | 내가 기부하거나 받은 이력 타임라인 |
+| 13 | **기부-적금 연동 UI** | 기부 횟수에 따른 우대금리 시각화 (Mock 데이터) |
+| 14 | **수혜자 답장 편지 기능** |
+ 
+### P2 — 확장
+ 
+- ATM 박스 신청 플로우 (Mock)
+- 관리자 대시보드 (매칭 현황, 카테고리별 통계)
+- 물품 상태 알림 (수거 완료, 매칭 완료 등)
+- ESG 리포트 (탄소 절감량 등 통계 시각화)
+
+## 4. 화면 구성 (예상 스크린 리스트)
+
+```
+1. 온보딩/로그인
+2. 홈 (기부자용) — "물건 등록하기" CTA
+3. 음성 물품 등록 플로우 (캐릭터 질문 4단계 + 녹음)
+4. 등록 완료/게시글 미리보기
+5. 홈 (수혜자용) — 물품 목록
+6. 물품 상세 + 선택하기
+7. AI 감사편지 작성 (음성 → 변환 미리보기)
+8. 감사편지 수신함
+9. 마이페이지 (기부 내역, 적금 우대금리 Mock)
+10. ATM 박스 신청 (Mock)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 5. 기술 스택 제안
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| 영역 | 기술 | 이유 |
+|---|---|---|
+| 프론트엔드 | Next.js (React) + Tailwind | 빠른 개발, Vercel 배포 용이 |
+| 백엔드 | Next.js API Routes (or 별도 Node/Express) | 프론트와 통합 배포 가능, 서버리스로 빠르게 시작 |
+| DB | Supabase (PostgreSQL) | 인증 + DB + 스토리지(음성파일, 이미지)를 한 번에 해결 |
+| 음성 인식 (STT) | OpenAI Whisper API | 신청서에 명시된 기술 스택과 동일 |
+| 텍스트 생성 (게시글/편지) | GPT-4o API | 신청서에 명시된 기술 스택과 동일 |
+| 배포 | Vercel | 프론트 + API Routes 동시 배포, 빠른 데모 링크 공유 |
+| 이미지/파일 저장 | Supabase Storage | 음성 파일, 물품 사진 업로드 |
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 6. 다음 액션
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Figma 디자인 확정본 + Dev Mode 스타일 값 정리
+2. Supabase DB 스키마 설계 (users, items, matches, letters 테이블)
+3. Step 1(기반 세팅)부터 바로 개발 시작
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 7. 피그마
+https://www.figma.com/design/AJSoGcIxxgzFyVUJYshIaf/clauProject?node-id=1-80&t=a2yMfkxMMqG9eRoK-1
