@@ -24,7 +24,7 @@ export default function RootLayout({
       <body>
         {/*
           폰 프레임 셸: 모바일에선 화면 폭에 꽉 차고,
-          데스크톱에선 가운데 480px 세로 프레임 + 그림자로 앱처럼 보임.
+          데스크톱에선 가운데 폰 프레임(--frame-max) + 그림자로 앱처럼 보임.
         */}
         <div className="relative mx-auto flex min-h-screen w-full max-w-[var(--frame-max)] flex-col bg-page shadow-[0_0_40px_rgba(0,0,0,0.06)]">
           {children}

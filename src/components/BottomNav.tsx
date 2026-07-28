@@ -64,7 +64,7 @@ export default function BottomNav() {
         <div className="flex justify-center">
           <Link
             href="/register"
-            className="-mt-8 flex h-16 w-16 flex-col items-center justify-center gap-0.5 rounded-full bg-forest text-white shadow-lg shadow-forest/30 ring-4 ring-white transition-transform active:scale-95"
+            className="-mt-8 flex h-[70px] w-[70px] flex-col items-center justify-center gap-0.5 rounded-full bg-forest text-white shadow-[0_2px_2px_0_rgba(0,0,0,0.25)] ring-4 ring-white transition-transform active:scale-95"
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 8H4v12h16V8Z" />
@@ -87,8 +87,8 @@ function TabButton({ tab, active }: { tab: Tab; active: boolean }) {
   return (
     <Link
       href={tab.href}
-      className={`flex flex-col items-center gap-1 py-1 text-[11px] font-medium transition-colors ${
-        active ? "text-forest" : "text-ink-40"
+      className={`flex flex-col items-center gap-1 py-1 text-[12px] font-semibold transition-colors ${
+        active ? "text-forest" : "text-muted"
       }`}
     >
       {tab.icon}

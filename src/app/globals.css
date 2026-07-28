@@ -3,31 +3,32 @@
 @import "tailwindcss";
 
 /*
-  다시온 디자인 토큰
-  - 피그마 색상 스타일 패널 기준(#346739 메인, #F9FFFB 배경 등) + 스크린샷 보완
-  - 정확한 18색 팔레트 확보 시 이 값들만 갱신하면 전체 화면에 반영됨
+  다시온 디자인 토큰 — 피그마 clauProject(node 1:80) GLOBAL_VARS 값 그대로
+  값 출처를 주석의 figma 변수명으로 표기해 둠(추후 대조용).
 */
 @theme {
   --font-sans: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui,
     "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 
   /* 그린 스케일 */
-  --color-forest: #346739; /* 메인 CTA·강조 텍스트·통계 숫자 */
-  --color-leaf: #5e9150; /* 서브 버튼(기부 받기)·활성 필터 칩 */
-  --color-mint: #eaf4e3; /* 히어로/섹션 연한 배경 */
-  --color-mint-100: #f1f8ec; /* 더 옅은 그린 */
-  --color-page: #f9fffb; /* 페이지 배경 */
+  --color-forest: #346739; /* ui_main1 — 메인 CTA·통계 숫자·활성 칩 */
+  --color-leaf: #79ae6f; /* ui_main2 — 서브 그린 */
+  --color-sage: #9fcb98; /* ui_main3 — 히어로 테두리/미드 그린 */
+  --color-teal: #005042; /* main1 — 비활성 칩 텍스트(딥 그린) */
+  --color-chip: #dff4e5; /* 비활성 필터 칩 배경 */
+  --color-page: #fdfffa; /* ui_background — 페이지 배경 */
 
-  /* 잉크(텍스트) — 피그마 000000 투명도 단계 */
-  --color-ink: #1b1b1b; /* 제목/진한 텍스트 */
-  --color-ink-60: rgba(0, 0, 0, 0.68); /* 본문 */
-  --color-ink-40: rgba(0, 0, 0, 0.4); /* 보조 */
+  /* 잉크(텍스트) — 피그마 값 그대로 */
+  --color-ink: #333333; /* ui_text — 제목/진한 텍스트 */
+  --color-ink-60: rgba(0, 0, 0, 0.68); /* fill_fb5e388d — 카드 제목/뱃지 */
+  --color-ink-40: rgba(0, 0, 0, 0.4); /* fill_62008434 — 위치 텍스트 */
   --color-ink-25: rgba(0, 0, 0, 0.25); /* 비활성/플레이스홀더 */
+  --color-muted: #838383; /* fill_54ffdbad — 검색 placeholder·통계 라벨·서브카피 */
 
   --color-line: rgba(0, 0, 0, 0.08); /* 보더 */
 
-  /* 폰 프레임 최대 폭 */
-  --frame-max: 480px;
+  /* 폰 프레임 최대 폭 (피그마 폰 프레임 폭) */
+  --frame-max: 402px;
 }
 
 html,
