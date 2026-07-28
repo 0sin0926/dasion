@@ -66,6 +66,17 @@ Checklist "Connect Git Repository" 완료). 참고로 빌드 중 홈 디렉터�
 `package-lock.json` 때문에 발생하던 Turbopack 워크스페이스 루트 경고는 `next.config.ts`에
 `turbopack.root` 명시해 해결(커밋 `38e95e2`).
 
+### 2.5 Supabase 프로젝트 생성 및 스키마 적용
+- 프로젝트명 `dasion`, ID `tpdezuisujvteuvfavzj`, region `ap-northeast-2`(Seoul), Free 플랜
+- API 키 체계가 신형(`publishable`/`secret`, `sb_publishable_...`/`sb_secret_...`)이라 구형
+  `anon`/`service_role` 대신 이 값 사용. Next.js 환경변수명:
+  `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`
+- `supabase/schema.sql` 작성 후 Supabase SQL Editor에서 실행 완료 — `users, items, matches,
+  letters` 4개 테이블 + RLS 정책(공개 읽기, 본인 소유만 쓰기) 포함
+- 로컬 `.env.local`에 키 설정 완료(gitignore로 미커밋 확인됨)
+- Vercel 프로젝트에도 동일 3개 환경변수 등록 완료(Settings → **Environments** — 이 Vercel UI
+  버전은 메뉴명이 "Environment Variables"가 아니라 "Environments"임에 유의)
+
 ---
 
 ## 3. 주요 결정 사항
@@ -126,8 +137,9 @@ Checklist "Connect Git Repository" 완료). 참고로 빌드 중 홈 디렉터�
 3. ~~Vercel 프로젝트 생성 + 연동~~ 완료 — 배포 URL: https://dasion-zeta.vercel.app
    (main push 시 자동 재배포 확인됨)
 4. ~~Supabase 프로젝트 생성 + 스키마(`users, items, matches, letters`) 적용~~ 완료
-   (`supabase/schema.sql`, RLS 정책 포함, SQL Editor에서 실행 확인됨. 프로젝트:
-   `tpdezuisujvteuvfavzj`, `.env.local`에 키 설정 완료)
-5. Figma 디자인 값/스크린샷 전달받아 P0 화면부터 Mock 데이터로 구현
+   (2.5 참고 — 로컬/Vercel 환경변수까지 전부 등록 완료)
+5. **← 다음 세션 시작 지점.** Figma 디자인 값/스크린샷 전달받아 P0 화면부터 Mock 데이터로
+   구현. 방법 B(4번 섹션)로 전달받고, **홈 피드 화면부터** 시작 권장(앱 진입점이라 구조
+   잡기 편함). 순서: 홈 피드 → 물품 등록 플로우 → 물품 상세+기부받기 → 마이페이지
 6. STT/GPT API 라우트 연결해서 실제 등록 플로우 완성 → 재배포
 7. 시간 남으면 P1(통계 위젯, 지역/기록 탭) 추가
