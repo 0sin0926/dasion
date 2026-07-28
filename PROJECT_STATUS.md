@@ -51,8 +51,13 @@ dasion/
 (Next.js는 API 라우트가 반드시 `app/api` 아래 있어야 해서 완전한 물리적 분리는 아니지만,
 라우팅(`app`)과 실제 백엔드 로직(`server`)을 분리해 실질적으로 백/프론트를 나눔)
 
-GitHub 원격 연결 완료(`git remote add origin https://github.com/0sin0926/dasion.git`), **아직
-push는 하지 않은 상태**.
+GitHub 원격 연결 완료(`git remote add origin https://github.com/0sin0926/dasion.git`).
+
+### 2.3 원격 저장소 히스토리 병합 및 push
+원격 `0sin0926/dasion`에 로컬과 공통 조상이 없는 별도 히스토리(README.md만 존재, 원본
+기획서 내용)가 이미 올라가 있던 상태였음. 로컬 코드(Next.js 스캐폴딩)는 그대로 유지하고
+README.md만 원격의 기획서 버전으로 통일해 `--allow-unrelated-histories`로 병합 후 push
+완료(`738044a..8c1db5e`). force push 아님 — 정상 병합.
 
 ---
 
@@ -110,7 +115,7 @@ push는 하지 않은 상태**.
 ## 7. 다음 액션 (새 세션에서 이어서 진행)
 
 1. `npm run dev`로 로컬 화면 확인
-2. `https://github.com/0sin0926/dasion`으로 push
+2. ~~`https://github.com/0sin0926/dasion`으로 push~~ 완료 (2.3 참고)
 3. Vercel 프로젝트 생성 + 연동 (첫 배포 — 빈 화면이어도 무방)
 4. Supabase 프로젝트 생성 + 스키마(`users, items, matches, letters`) 적용
 5. Figma 디자인 값/스크린샷 전달받아 P0 화면부터 Mock 데이터로 구현
