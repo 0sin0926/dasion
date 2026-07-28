@@ -168,6 +168,7 @@ export default function RegisterPage() {
       <footer className="fixed bottom-0 left-1/2 z-50 w-full max-w-[var(--frame-max)] -translate-x-1/2 border-t border-gray-100 bg-white/80 p-4 pb-[max(16px,env(safe-area-inset-bottom))] backdrop-blur-sm">
         <button
           type="button"
+          onClick={() => router.push("/register/complete")}
           className="w-full rounded-2xl bg-[#3D6B3D] py-4 text-base font-bold text-white shadow-[0_4px_20px_rgba(61,107,61,0.4)] transition-transform active:scale-[0.98]"
         >
           물품 등록하기

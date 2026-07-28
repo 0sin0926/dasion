@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { Item } from "@/types/item";
 import { CATEGORY_MAP } from "@/lib/categories";
 
@@ -6,8 +7,11 @@ export default function ItemCard({ item }: { item: Item }) {
   const cat = CATEGORY_MAP[item.category];
 
   return (
-    // 피그마: 카드 radius 15, 그림자 0 0.5px 0.5px rgba(0,0,0,.25), 내부 gap 5
-    <div className="flex flex-col gap-[5px] rounded-[15px] bg-white p-[7px] shadow-[0_0.5px_0.5px_0_rgba(0,0,0,0.25)]">
+    // 카드 전체를 상세(/items/[id])로 연결. 피그마: radius 15, 그림자 0 0.5px 0.5px, 내부 gap 5
+    <Link
+      href={`/items/${item.id}`}
+      className="flex flex-col gap-[5px] rounded-[15px] bg-white p-[7px] shadow-[0_0.5px_0.5px_0_rgba(0,0,0,0.25)]"
+    >
       {/* 이미지 (사진 없으면 카테고리 이모지 플레이스홀더) — radius 20 */}
       <div
         className="relative flex aspect-square items-center justify-center overflow-hidden rounded-[15px]"
@@ -52,13 +56,11 @@ export default function ItemCard({ item }: { item: Item }) {
         </p>
       </div>
 
-      {/* 기부 받기 — 피그마: #346739, radius 20, 그림자 0 4px 4px rgba(0,0,0,.25), ExtraBold 12 흰글씨 */}
-      <button
-        type="button"
-        className="w-full rounded-[12px] bg-forest py-[7px] text-[12px] font-extrabold text-white shadow-[0_4px_4px_0_rgba(0,0,0,0.25)] transition-colors active:bg-teal"
-      >
+      {/* 기부 받기 — 피그마: #346739, radius 20, 그림자 0 4px 4px rgba(0,0,0,.25), ExtraBold 12 흰글씨
+          (카드 전체가 Link 이므로 button 대신 span 으로 표기) */}
+      <span className="block w-full rounded-[12px] bg-forest py-[7px] text-center text-[12px] font-extrabold text-white shadow-[0_4px_4px_0_rgba(0,0,0,0.25)]">
         기부 받기
-      </button>
-    </div>
+      </span>
+    </Link>
   );
 }
