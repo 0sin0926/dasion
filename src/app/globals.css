@@ -1,26 +1,52 @@
+/* Pretendard (한글 웹폰트) — 동적 서브셋 CDN. 나중에 self-host로 교체 가능 */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css");
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+  다시온 디자인 토큰
+  - 피그마 색상 스타일 패널 기준(#346739 메인, #F9FFFB 배경 등) + 스크린샷 보완
+  - 정확한 18색 팔레트 확보 시 이 값들만 갱신하면 전체 화면에 반영됨
+*/
+@theme {
+  --font-sans: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui,
+    "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+
+  /* 그린 스케일 */
+  --color-forest: #346739; /* 메인 CTA·강조 텍스트·통계 숫자 */
+  --color-leaf: #5e9150; /* 서브 버튼(기부 받기)·활성 필터 칩 */
+  --color-mint: #eaf4e3; /* 히어로/섹션 연한 배경 */
+  --color-mint-100: #f1f8ec; /* 더 옅은 그린 */
+  --color-page: #f9fffb; /* 페이지 배경 */
+
+  /* 잉크(텍스트) — 피그마 000000 투명도 단계 */
+  --color-ink: #1b1b1b; /* 제목/진한 텍스트 */
+  --color-ink-60: rgba(0, 0, 0, 0.68); /* 본문 */
+  --color-ink-40: rgba(0, 0, 0, 0.4); /* 보조 */
+  --color-ink-25: rgba(0, 0, 0, 0.25); /* 비활성/플레이스홀더 */
+
+  --color-line: rgba(0, 0, 0, 0.08); /* 보더 */
+
+  /* 폰 프레임 최대 폭 */
+  --frame-max: 480px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #e9ece8; /* 데스크톱에서 프레임 바깥 여백 색 */
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 스크롤바 감춤(모바일 앱 느낌) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

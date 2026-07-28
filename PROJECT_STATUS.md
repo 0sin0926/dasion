@@ -77,6 +77,22 @@ Checklist "Connect Git Repository" 완료). 참고로 빌드 중 홈 디렉터�
 - Vercel 프로젝트에도 동일 3개 환경변수 등록 완료(Settings → **Environments** — 이 Vercel UI
   버전은 메뉴명이 "Environment Variables"가 아니라 "Environments"임에 유의)
 
+### 2.6 디자인 토큰 + 홈 피드 화면 구현 (2026-07-28)
+피그마 스크린샷/색상 팔레트/캐릭터 에셋 전달받아 P0 첫 화면 구현.
+- **디자인 토큰**(`src/app/globals.css`): 메인 그린 `#346739`, 서브 그린 `#5e9150`, 연한 배경
+  `#eaf4e3`, 페이지 배경 `#f9fffb`, 텍스트 잉크 단계(68/40/25%). 폰트 Pretendard(현재 CDN, 추후
+  self-host 교체 가능). Tailwind v4 `@theme` 방식
+- **폰 프레임 셸**(`src/app/layout.tsx`): 모바일 풀스크린, 데스크톱은 가운데 480px 프레임+그림자
+- **캐릭터 에셋**(`public/characters/`): 손 흔들기/선물상자/편지쓰기 3종(투명 PNG)
+- **홈 피드**(`src/app/page.tsx` + `src/components/home/*`): 헤더+검색, 히어로+통계위젯(Mock
+  890/547/678), 카테고리 필터(클라이언트, 실시간 필터링), 물품 카드 그리드, 하단 CTA, 공통
+  하단 탭 네비(`src/components/BottomNav.tsx`)
+- **Mock 데이터**: `src/server/mock/items.ts`, 카테고리 정의 `src/lib/categories.ts`, 공용 타입
+  `src/types/item.ts`
+- `npm run build` 통과, dev 서버 렌더링 확인 완료
+- **미확정/추후 교체**: 서브 그린 정확값·카테고리 아이콘 SVG(현재 이모지)·헤더 로고 얼굴(현재
+  손흔들기 캐릭터 크롭)은 정확한 에셋 받으면 교체
+
 ---
 
 ## 3. 주요 결정 사항
@@ -88,6 +104,7 @@ Checklist "Connect Git Repository" 완료). 참고로 빌드 중 홈 디렉터�
 | STT | OpenAI Whisper API | 기획서 명시 스택 |
 | 텍스트 생성 | GPT-4o API | 게시글/감사편지 생성 |
 | 배포 | Vercel | 프론트+API Routes 동시 배포, 빠른 데모 링크 |
+| AWS 경험 방식 | **MVP 완성 후 AWS 재배포(+S3)** | Next.js 스택 유지한 채 같은 앱을 AWS Amplify에 재배포 + 사진/음성 저장을 S3로 이전. 데모는 Vercel로 안전하게 유지하면서 배포·버킷·IAM을 직접 경험. 비용 ≈ 무료(프리티어). RDS/EC2 풀 전환은 세팅·비용 부담으로 제외 |
 | 홈 디렉터리 git 정리 범위 | 로컬만 정리 | GitHub 원격(4bit_BE)은 팀 공유 저장소라 손대지 않음 |
 
 ---
@@ -138,8 +155,11 @@ Checklist "Connect Git Repository" 완료). 참고로 빌드 중 홈 디렉터�
    (main push 시 자동 재배포 확인됨)
 4. ~~Supabase 프로젝트 생성 + 스키마(`users, items, matches, letters`) 적용~~ 완료
    (2.5 참고 — 로컬/Vercel 환경변수까지 전부 등록 완료)
-5. **← 다음 세션 시작 지점.** Figma 디자인 값/스크린샷 전달받아 P0 화면부터 Mock 데이터로
-   구현. 방법 B(4번 섹션)로 전달받고, **홈 피드 화면부터** 시작 권장(앱 진입점이라 구조
-   잡기 편함). 순서: 홈 피드 → 물품 등록 플로우 → 물품 상세+기부받기 → 마이페이지
-6. STT/GPT API 라우트 연결해서 실제 등록 플로우 완성 → 재배포
-7. 시간 남으면 P1(통계 위젯, 지역/기록 탭) 추가
+5. ~~Figma 전달받아 홈 피드 구현~~ 완료 (2.6 참고). 순서: ~~홈 피드~~ → **물품 등록 플로우(다음)**
+   → 물품 상세+기부받기 → 마이페이지
+6. **← 다음 세션 시작 지점.** 물품 등록 플로우 화면 구현(`/register`) — 카테고리 선택 → 이름
+   입력 → 음성 설명 → 사진 업로드(0/5) → 편지 작성 → "물품 등록하기". 등록 스크린샷 이미
+   확보됨. 하단 탭 중앙 FAB·홈 CTA가 `/register`로 연결돼 있음(현재 미구현 라우트)
+7. STT/GPT API 라우트 연결해서 실제 등록 플로우 완성 → 재배포
+8. 물품 상세+기부받기, 마이페이지 구현
+9. MVP 안정화 후 AWS 재배포(+S3) 학습 트랙 진행 (3번 결정 참고)
