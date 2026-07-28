@@ -125,7 +125,9 @@ Checklist "Connect Git Repository" 완료). 참고로 빌드 중 홈 디렉터�
 2. ~~`https://github.com/0sin0926/dasion`으로 push~~ 완료 (2.3 참고)
 3. ~~Vercel 프로젝트 생성 + 연동~~ 완료 — 배포 URL: https://dasion-zeta.vercel.app
    (main push 시 자동 재배포 확인됨)
-4. Supabase 프로젝트 생성 + 스키마(`users, items, matches, letters`) 적용
+4. ~~Supabase 프로젝트 생성 + 스키마(`users, items, matches, letters`) 적용~~ 완료
+   (`supabase/schema.sql`, RLS 정책 포함, SQL Editor에서 실행 확인됨. 프로젝트:
+   `tpdezuisujvteuvfavzj`, `.env.local`에 키 설정 완료)
 5. Figma 디자인 값/스크린샷 전달받아 P0 화면부터 Mock 데이터로 구현
 6. STT/GPT API 라우트 연결해서 실제 등록 플로우 완성 → 재배포
 7. 시간 남으면 P1(통계 위젯, 지역/기록 탭) 추가
