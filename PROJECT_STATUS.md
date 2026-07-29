@@ -128,7 +128,7 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 
 **다음 증분 후보**:
 - ~~물품 상세 "기부 받기" → `matches` insert + item status 갱신~~ 완료 (2.9 참고)
-- 마이페이지: 프로필 이름/지역 편집 + 내가 기부한/받은 물품 목록
+- ~~마이페이지: 프로필 이름/지역 편집 + 내가 기부한/받은 물품 목록~~ 완료 (2.10 참고)
 - STT/GPT 라우트(`/api/stt`, `/api/generate-post`, `/api/generate-letter`) → 등록 플로우 마이크 활성화. **선행: OpenAI API 키 발급 후 `.env.local`·Vercel에 `OPENAI_API_KEY` 등록**
 
 ### 2.9 기부 받기(claim) + 감사 편지 (2026-07-29)
@@ -147,7 +147,38 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 - `src/app/items/[id]/page.tsx` — 죽어있던 "기부 받기" 버튼을 `ReceiveButton`으로 교체
 - 검증: `tsc`·`npm run build` 통과(새 라우트 3개 등록 확인)
 
-**⚠️ Supabase 조치 필요(다음 세션 시작 전)**: `supabase/migrations/0003_claim_item.sql`을 SQL Editor에서 실행해야 기부받기가 실제 동작함(0001/0002 실행했던 것과 동일 절차).
+**Supabase 조치 완료(2026-07-29)**: `0003_claim_item.sql` SQL Editor에서 실행 완료 — 기부받기 end-to-end 동작 확인됨.
+
+### 2.10 마이페이지 — 프로필 편집 + 내 기부/받은 목록 (2026-07-29)
+개인별 데이터가 화면에 처음 드러나는 지점. 익명 세션 유저의 프로필과 기부/수령 기록을 실제로 조회·수정.
+
+- **아키텍처 확정**: 개인/인증 읽기는 세션이 브라우저에만 있으므로 **클라이언트 컴포넌트에서 조회**(공개 읽기=서버 컴포넌트와 대비). `/my`는 `"use client"`로 `bootstrapAuth()` → 프로필·기부·수령 병렬 fetch.
+- **DB 추가 스키마 없음**: 기존 `users`/`items`/`matches` + 공개 select 정책(true)으로 전부 커버. 프로필 수정만 `users_update_own`(auth.uid()=id) 사용.
+
+구현/변경 파일:
+- `src/types/profile.ts` — `Profile`, `UserRole`, `MatchStatus`, `ReceivedItem`
+- `src/lib/profile/profile.ts` — `getMyProfile`, `updateProfile`(이름/지역/역할)
+- `src/lib/items/getMyDonations.ts` — 내가 등록한 물품(status 무관 전체, 최신순)
+- `src/lib/matches/getMyReceived.ts` — 내가 받은 물품(matches + items 조인)
+- `src/components/my/MyItemCard.tsx` — 목록 행 카드(홈 카드와 달리 CTA 대신 상태 뱃지)
+- `src/app/my/page.tsx` — 플레이스홀더 교체: 프로필 카드+인라인 편집, 기부한/받은 탭, 빈 상태
+- 검증: `tsc`·`npm run build` 통과, dev `/my` 200
+
+### 2.11 프로필 사진 + 지역 선택 고도화 (2026-07-29)
+마이페이지 편집 UX 개선. 사진 업로드와 전국 지역 드롭다운 추가.
+
+- **프로필 사진**: 편집 → "사진 등록하기" → ①사진 올리기(구현) ②나만의 캐릭터 만들기(준비 중, 비활성)로 분기. 최종 비전은 아이 얼굴 묘사 기반 **AI 캐릭터 생성**(추후, STT/GPT 트랙과 함께). 지금은 파일 업로드 → `avatars` 버킷 → `users.avatar_url` 저장.
+- **지역 선택**: 자유 입력 → **시/도 → 시·군·구 2단 드롭다운**(전국). `src/lib/regions.ts`에 17개 시/도 전체 시군구 데이터(세종은 단층이라 시군구 없음). 저장 형식 `"서울특별시 강남구"`, `parseRegion`/`formatRegion`으로 왕복.
+
+구현/변경 파일:
+- `supabase/migrations/0004_user_avatar.sql` — `users.avatar_url` 컬럼 + `avatars` 버킷/정책 (**아직 Supabase 미실행 — 아래 조치 필요**)
+- `src/lib/regions.ts` — 전국 시/도→시군구 데이터 + `parseRegion`/`formatRegion`/`getSigungu`
+- `src/lib/profile/uploadAvatar.ts` — 사진 Storage 업로드 → 공개 URL
+- `src/lib/profile/profile.ts` + `src/types/profile.ts` — `avatarUrl` 반영(getMyProfile select, updateProfile 선택적 갱신)
+- `src/app/my/page.tsx` — 편집 폼에 사진 섹션 + 지역 2단 select, 비편집 카드에 사진 표시
+- 검증: `tsc`·`npm run build` 통과, dev `/my` 200
+
+**⚠️ Supabase 조치 필요**: `supabase/migrations/0004_user_avatar.sql` 실행해야 프로필 **사진 저장**이 동작함(지역 선택은 마이그레이션 없이 바로 됨 — region 컬럼은 기존).
 
 ---
 
