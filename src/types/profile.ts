@@ -26,3 +26,13 @@ export interface ReceivedItem {
   matchedAt: string;
   item: Item;
 }
+
+/** 기부자가 받은 감사편지 = 수혜자 답장(recipient_reply) + 물품/보낸 사람 요약 */
+export interface ReceivedLetter {
+  id: string;
+  content: string;
+  createdAt: string;
+  /** 편지를 보낸 수혜자 이름 (프로필 미설정 시 null) */
+  senderName: string | null;
+  item: Item;
+}

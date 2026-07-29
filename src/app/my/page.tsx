@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import BottomNav from "@/components/BottomNav";
 import MyItemCard from "@/components/my/MyItemCard";
 import { bootstrapAuth } from "@/lib/supabase/auth";
@@ -8,6 +9,8 @@ import { getMyProfile, updateProfile } from "@/lib/profile/profile";
 import { uploadAvatar } from "@/lib/profile/uploadAvatar";
 import { getMyDonations } from "@/lib/items/getMyDonations";
 import { getMyReceived } from "@/lib/matches/getMyReceived";
+import { getMyReceivedLetters } from "@/lib/letters/getMyReceivedLetters";
+import { CATEGORY_MAP } from "@/lib/categories";
 import {
   SIDO_LIST,
   getSigungu,
@@ -15,7 +18,13 @@ import {
   formatRegion,
 } from "@/lib/regions";
 import type { Item, ItemStatus } from "@/types/item";
-import type { MatchStatus, Profile, ReceivedItem, UserRole } from "@/types/profile";
+import type {
+  MatchStatus,
+  Profile,
+  ReceivedItem,
+  ReceivedLetter,
+  UserRole,
+} from "@/types/profile";
 
 type BadgeTone = "green" | "amber" | "gray";
 
@@ -46,9 +55,10 @@ export default function MyPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [donations, setDonations] = useState<Item[]>([]);
   const [received, setReceived] = useState<ReceivedItem[]>([]);
+  const [letters, setLetters] = useState<ReceivedLetter[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const [tab, setTab] = useState<"donated" | "received">("donated");
+  const [tab, setTab] = useState<"donated" | "received" | "letters">("donated");
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
@@ -63,15 +73,17 @@ export default function MyPage() {
         }
         if (!alive) return;
         setUserId(uid);
-        const [p, d, r] = await Promise.all([
+        const [p, d, r, l] = await Promise.all([
           getMyProfile(uid),
           getMyDonations(uid),
           getMyReceived(uid),
+          getMyReceivedLetters(uid),
         ]);
         if (!alive) return;
         setProfile(p);
         setDonations(d);
         setReceived(r);
+        setLetters(l);
       } catch (err) {
         console.error("[my] 데이터 조회 실패:", err);
         if (alive) setLoadError(true);
@@ -139,6 +151,9 @@ export default function MyPage() {
               <TabBtn active={tab === "received"} onClick={() => setTab("received")}>
                 받은 {received.length}
               </TabBtn>
+              <TabBtn active={tab === "letters"} onClick={() => setTab("letters")}>
+                받은 편지 {letters.length}
+              </TabBtn>
             </div>
 
             {/* 목록 */}
@@ -157,16 +172,29 @@ export default function MyPage() {
                   ))}
                 </div>
               )
-            ) : received.length === 0 ? (
-              <EmptyState emoji="💝" text="아직 받은 물품이 없어요." />
+            ) : tab === "received" ? (
+              received.length === 0 ? (
+                <EmptyState emoji="💝" text="아직 받은 물품이 없어요." />
+              ) : (
+                <div className="space-y-2.5">
+                  {received.map((r) => (
+                    <MyItemCard
+                      key={r.matchId}
+                      item={r.item}
+                      badge={MATCH_BADGE[r.matchStatus]}
+                    />
+                  ))}
+                </div>
+              )
+            ) : letters.length === 0 ? (
+              <EmptyState
+                emoji="💌"
+                text="아직 받은 편지가 없어요. 기부한 물품에 감사 편지가 오면 여기에 모여요."
+              />
             ) : (
               <div className="space-y-2.5">
-                {received.map((r) => (
-                  <MyItemCard
-                    key={r.matchId}
-                    item={r.item}
-                    badge={MATCH_BADGE[r.matchStatus]}
-                  />
+                {letters.map((l) => (
+                  <LetterCard key={l.id} letter={l} />
                 ))}
               </div>
             )}
@@ -204,8 +232,50 @@ function EmptyState({ emoji, text }: { emoji: string; text: string }) {
   return (
     <div className="flex flex-col items-center gap-2 py-16 text-center">
       <span className="text-4xl">{emoji}</span>
-      <p className="text-[13px] text-ink-40">{text}</p>
+      <p className="text-[13px] leading-6 text-ink-40">{text}</p>
     </div>
+  );
+}
+
+/** YYYY.MM.DD 포맷 (편지 받은 날짜 표기용) */
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}.${m}.${day}`;
+}
+
+/**
+ * 받은 편지 카드 — 수혜자가 보낸 감사 편지(recipient_reply)를 편지지 톤(주황)으로 보여준다.
+ * 상세로 이동하면 원본 물품/편지 맥락을 함께 볼 수 있게 물품 상세로 링크한다.
+ */
+function LetterCard({ letter }: { letter: ReceivedLetter }) {
+  const cat = CATEGORY_MAP[letter.item.category];
+  return (
+    <Link
+      href={`/items/${letter.item.id}`}
+      className="block rounded-2xl border border-[#FDE3CE] bg-[#FFF1E5] p-4 shadow-[0_0.5px_0.5px_0_rgba(0,0,0,0.15)]"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex min-w-0 items-center gap-1.5 text-[12px] font-bold text-[#B96A25]">
+          <span className="shrink-0">💌</span>
+          <span className="truncate">
+            {letter.senderName ? `${letter.senderName}님의 편지` : "감사 편지"}
+            <span className="font-semibold text-[#B96A25]/70">
+              {" "}· {cat.emoji} {letter.item.name}
+            </span>
+          </span>
+        </p>
+        <span className="shrink-0 text-[11px] font-medium text-[#B96A25]/70">
+          {formatDate(letter.createdAt)}
+        </span>
+      </div>
+      <p className="mt-2 whitespace-pre-wrap text-[13px] leading-6 text-[#8A4E18]">
+        {letter.content}
+      </p>
+    </Link>
   );
 }
 

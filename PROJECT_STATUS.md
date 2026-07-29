@@ -274,6 +274,16 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 
 **⚠️ 남은 조치**: ①**Vercel env 미등록** — 배포본 음성 기능이 아직 안 됨. Vercel에 `GOOGLE_CLOUD_PROJECT`/`GOOGLE_CLOUD_LOCATION`/`GCP_SA_JSON`(JSON 전체) 등록 필요. ②(권장) 예산 알림 + Vertex 일일 할당량 상한으로 크레딧 소진/만료 이후 카드 청구 방지. ③브라우저 실제 마이크 녹음 수동 테스트.
 
+### 2.19 마이페이지 "받은 편지" 탭 — 기부자의 감사편지 열람 (2026-07-29)
+그동안 감사편지(`recipient_reply`)는 기부받기 시 DB에 **저장만 되고 기부자가 볼 경로가 없던** 빠진 고리를 연결. 마이페이지에 전용 탭을 추가해 내가 기부한 물품에 달린 답장을 편지함처럼 모아 봄.
+
+- **DB/정책 추가 없음**: `letters` 테이블·`letters_select_all`(공개 select) 이미 존재 → **조회 함수 + UI만** 추가. 서버 마이그레이션 불필요.
+- **조회**: `letters`에서 `type='recipient_reply'` + `items!inner`로 `owner_id=나`인 물품의 편지만 필터(내가 준 물품에 온 답장). 물품 요약 + 보낸 사람 이름 조인, 최신순.
+- **UI**: 기존 기부한/받은 2탭 → **3탭**(기부한/받은/**받은 편지 N**). 편지 카드는 상세의 기부자 편지와 같은 편지지 톤(주황 `#FFF1E5`/`#B96A25`), 보낸 사람·물품·날짜(YYYY.MM.DD)·본문 표시, 탭하면 원본 물품 상세로 이동. 빈 상태 문구 추가.
+- **검증**: `tsc`·`eslint` 통과. ⚠️ 실제 편지 렌더는 감사편지가 달린 매칭 데이터로 브라우저 확인 필요.
+
+**신규**: `src/lib/letters/getMyReceivedLetters.ts`. **수정**: `src/types/profile.ts`(`ReceivedLetter`), `src/app/my/page.tsx`(3번째 탭 + `LetterCard`).
+
 ---
 
 ## 3. 주요 결정 사항
