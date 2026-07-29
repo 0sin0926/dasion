@@ -1,5 +1,7 @@
 /* Pretendard (한글 웹폰트) — 동적 서브셋 CDN. 나중에 self-host로 교체 가능 */
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css");
+/* Jua (주아체) — 둥근 한글 폰트, 로고 "다시온" 전용 */
+@import url("https://fonts.googleapis.com/css2?family=Jua&display=swap");
 @import "tailwindcss";
 
 /*
@@ -9,6 +11,8 @@
 @theme {
   --font-sans: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui,
     "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  /* 둥근 로고용 폰트 (font-round 유틸 생성) */
+  --font-round: "Jua", var(--font-sans);
 
   /* 그린 스케일 */
   --color-forest: #346739; /* ui_main1 — 메인 CTA·통계 숫자·활성 칩 */

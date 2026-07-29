@@ -49,6 +49,33 @@ export async function getItems(category?: CategoryKey): Promise<Item[]> {
   return (data as ItemRow[]).map(toItem);
 }
 
+export interface CommunityStats {
+  /** 기부된 물품 — 등록된 전체 items 수 */
+  donated: number;
+  /** 참여 가정 — 가입(익명 포함)된 전체 users 수 */
+  families: number;
+  /** 나눔 완료 — 실제 전달(매칭)된 건수 */
+  completed: number;
+}
+
+/**
+ * 홈 히어로 커뮤니티 통계. 세 테이블의 행 수를 count 로 집계한다.
+ * (RLS select 는 모두 공개(true)라 read-client 로 집계 가능)
+ */
+export async function getCommunityStats(): Promise<CommunityStats> {
+  const supabase = createReadClient();
+  const [items, users, matches] = await Promise.all([
+    supabase.from("items").select("id", { count: "exact", head: true }),
+    supabase.from("users").select("id", { count: "exact", head: true }),
+    supabase.from("matches").select("id", { count: "exact", head: true }),
+  ]);
+  return {
+    donated: items.count ?? 0,
+    families: users.count ?? 0,
+    completed: matches.count ?? 0,
+  };
+}
+
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

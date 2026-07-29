@@ -1,13 +1,13 @@
 import Image from "next/image";
-import { MOCK_STATS } from "@/server/mock/items";
+import type { CommunityStats } from "@/server/items/queries";
 
-const STATS = [
-  { value: MOCK_STATS.donated, label: "기부된 물품" },
-  { value: MOCK_STATS.families, label: "참여 가정" },
-  { value: MOCK_STATS.completed, label: "나눔 완료" },
-];
+export default function HeroSection({ stats }: { stats: CommunityStats }) {
+  const STATS = [
+    { value: stats.donated, label: "기부된 물품" },
+    { value: stats.families, label: "참여 가정" },
+    { value: stats.completed, label: "나눔 완료" },
+  ];
 
-export default function HeroSection() {
   return (
     // 히어로 초록 섹션 — 피그마 그라디언트: 180deg rgba(201,248,221,0.43) → rgba(204,236,199,1)
     <section className="bg-[linear-gradient(180deg,rgba(201,248,221,0.43)_0%,rgba(204,236,199,1)_100%)] px-6 pt-6 pb-6">

@@ -15,9 +15,7 @@ export default function HomeHeader() {
             className="object-cover"
           />
         </span>
-        <span className="text-[24px] font-extrabold tracking-tight text-forest">
-          다시온
-        </span>
+        <span className="font-round text-[26px] text-forest">다시온</span>
       </div>
 
       {/* 검색창 — 탭하면 /search 로 이동 (피그마: 361×48, radius 10, #F5F5F5, inset 그림자) */}
