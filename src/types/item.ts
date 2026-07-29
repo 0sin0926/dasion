@@ -37,8 +37,4 @@ export interface ItemDetail extends Item {
   /** 등록자(기부 아동/부모) 이름 */
   ownerName: string;
   createdAt: string;
-  /** 기부자가 함께 남긴 편지 본문(있을 때만) */
-  donorLetter: string | null;
-  /** 수혜자가 보낸 감사 편지 본문(나눔 성사 후, 있을 때만) */
-  recipientReply: string | null;
 }

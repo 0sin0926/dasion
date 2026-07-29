@@ -286,15 +286,19 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 
 **신규**: `src/lib/letters/getMyReceivedLetters.ts`. **수정**: `src/types/profile.ts`(`ReceivedLetter`), `src/app/my/page.tsx`(3번째 탭 + `LetterCard`).
 
-### 2.20 물품 상세 — 나눔 후 편지 공개(기부자 잠금 해제 + 감사 편지 노출) (2026-07-29)
-2.19 후속. 기부한 물품 상세를 열면 이미 나눔 완료인데도 기부자 편지가 잠겨 있고(내가 쓴 편지인데), 받은 감사 편지도 안 보이던 문제 해결.
+### 2.20 편지 열람을 당사자 전용으로 — RLS 제한 + 세션 기준 조회 (2026-07-29)
+2.19 후속. 상세에서 편지(기부자 편지 + 받은 감사 편지)를 보여주되, **본문은 당사자(기부자·수혜자)에게만** 보이도록 제한. (이미 나눔 완료인데 내가 쓴 기부자 편지가 잠겨 보이던 문제 + 감사 편지 미노출도 함께 해결.)
 
-- **기부자 편지 잠금 조건 변경**: `available`(나눔 전)엔 기존대로 잠금("기부를 받고 편지를 확인해봐요!", 기대감), **`matched`/`completed`(나눔 성사 후)엔 본문 공개**. 판단은 `item.status !== "available"`(`isTaken`) — 세션 불필요한 상태 기반이라 상세는 서버 컴포넌트 유지.
-- **받은 감사 편지 노출**: 상세에 `recipient_reply` 편지 카드 추가(초록 톤 `#EFF7EF`/`#CFE9D6`으로 주황 기부자 편지와 구분). 나눔 성사 후에만 존재.
-- **DB/쿼리**: `getItemById`가 이미 `letters(type, content)` 전부 조인 중 → `recipient_reply`만 추가 추출. 마이그레이션 불필요.
-- 검증: `tsc`·`eslint`·`build` 통과.
+- **핵심 결정 — 왜 RLS+클라이언트인가**: 상세는 서버 컴포넌트(read-client=익명 키)라 **열람자가 누구인지 모른다**(익명 세션은 브라우저 localStorage에만 존재). 그래서 ①`letters` RLS를 **당사자 전용**으로 조이고 ②편지 조회를 **세션 기준 브라우저 클라이언트**로 옮겨 RLS가 비당사자를 차단하게 함. UI로만 숨기면 익명 키로 본문이 새므로 **진짜 프라이버시는 RLS로만** 보장됨.
+- **RLS 변경**(`0005_letters_visibility.sql`): `letters_select_all`(공개) 제거 → `letters_select_party`(작성자 본인 OR 물품 소유자 OR 매칭 수혜자만 select). insert 정책·`claim_item`(security definer 삽입)은 그대로.
+- **잠금 UI 존재 여부**: 받기 전 "기부를 받고 편지를 확인해봐요!"(기대감)는 본문 없이 편지 **존재만** 알면 됨 → security-definer 함수 `item_letter_flags(item_id)`가 `has_donor_letter`/`has_reply` boolean만 공개 반환(anon 실행 허용). 비당사자·비로그인도 잠금 배지는 볼 수 있음.
+- **표시 규칙**(`ItemLetters` 클라이언트 컴포넌트): 당사자면 기부자 편지·감사 편지 **본문**을 렌더(감사 편지는 초록 톤 `#EFF7EF`/`#CFE9D6`으로 주황 기부자 편지와 구분). 비당사자는 **나눔 전(available) + 편지 존재** 시에만 잠금 배지, 나눔 후엔 아무것도 안 보임.
+- **서버 쿼리 정리**: `getItemById`에서 `letters` 조인 제거(어차피 익명 키론 RLS에 막힘) → `ItemDetail`의 `donorLetter`/`recipientReply` 필드 삭제. 편지는 전적으로 클라이언트 조회.
+- 검증: `tsc`·`eslint`·`build` 통과. ⚠️ 당사자/비당사자 실제 열람 차이는 **마이그레이션 실행 후 브라우저에서 확인 필요**.
 
-**수정**: `src/types/item.ts`(`ItemDetail.recipientReply`), `src/server/items/queries.ts`(추출), `src/app/items/[id]/page.tsx`(잠금 분기 + 감사 편지 카드). → 후속 과제 #2("수령자 편지 열람") 상당 부분 해소.
+**신규**: `supabase/migrations/0005_letters_visibility.sql`, `src/lib/letters/getItemLetters.ts`, `src/components/items/ItemLetters.tsx`. **수정**: `src/types/item.ts`(편지 필드 삭제), `src/server/items/queries.ts`(조인 제거), `src/app/items/[id]/page.tsx`(`ItemLetters`로 교체).
+
+**⚠️ Supabase 조치 필요**: `supabase/migrations/0005_letters_visibility.sql`을 SQL Editor에서 실행해야 **편지 열람 제한이 실제로 적용**됨. 미실행 시 예전 공개 정책이 남아 본문이 그대로 노출됨(단 앱 UI는 세션 기준이라 화면상으론 이미 당사자에게만 보임).
 
 ---
 
@@ -373,10 +377,11 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 - **브라우저 실제 마이크 녹음 수동 테스트** — 서버 파이프(Vertex STT)는 200 검증됨. 하드웨어 녹음은 헤드리스 불가라 미검증.
 - **(권장) 크레딧 소진/만료 대비 안전장치** — 유료 계정이라 크레딧(₩460k, 만료 2026-10-28) 소진 후 카드 청구됨. 예산 알림 + Vertex 일일 할당량 상한 걸어두면 안전.
 - **`0004_user_avatar.sql` 실행 여부 불확실** — 프로필 **사진 저장**이 배포본에서 되는지 확인. 안 되면 Supabase SQL Editor에서 실행.
+- **🔴 `0005_letters_visibility.sql` 미실행 — 편지 열람 제한 미적용** (2.20): SQL Editor에서 실행해야 `letters`가 당사자 전용이 됨. 미실행 시 익명 키로 본문이 여전히 공개(앱 UI로는 이미 가려짐).
 
 ### 다음 증분 후보 (우선순위 순 제안)
 1. **음성 등록 — 배포본 마무리** — 로컬은 Vertex로 완전 동작(설명·편지·가이드·감사편지 마이크 전부). **남은 것: ①위 Vercel env 등록 ②브라우저 실제 녹음 테스트.** (`ReceiveForm` 마이크 교체·429 안내·어미보정은 완료)
-2. **수령자 편지 열람** — 지금 전부 잠근 기부자 편지를, 기부 받은 수령자에게는 열리도록(matches 확인). 상세 페이지 주석에 자리 표시됨
+2. ~~**수령자 편지 열람** — 기부자 편지를 당사자(기부자·수혜자)에게 열람~~ 완료 (2.20: RLS 당사자 전용 + 세션 기준 조회). 남은 것: `0005` 마이그레이션 실행 + 브라우저 검증
 3. **기부자 편지 수정** — 물품 수정 시 편지도 고치려면 `letters`에 update/delete RLS 정책 필요(마이그레이션). 현재 물품 수정은 편지 제외
 4. **AI 프로필 캐릭터 생성** — 마이페이지 "나만의 캐릭터 만들기"(현재 비활성) — 이미지 생성 API
 5. **P1 화면** — 지역/기록 탭 실데이터, 커뮤니티 통계 위젯 확장

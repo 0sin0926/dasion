@@ -79,7 +79,11 @@ export async function getCommunityStats(): Promise<CommunityStats> {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** 물품 상세: 등록자 이름과 기부자 편지를 함께 조인해서 반환한다. */
+/**
+ * 물품 상세: 등록자 이름 등 공개 정보를 반환한다.
+ * 편지 본문은 당사자만 볼 수 있어야 하므로(letters RLS) 여기서 조인하지 않고,
+ * 상세 화면에서 세션 기준 클라이언트(`getItemLetters`)로 따로 조회한다.
+ */
 export async function getItemById(id: string): Promise<ItemDetail | null> {
   // UUID 형식이 아니면 Postgres가 22P02 에러를 던지므로, 조회 전에 없는 것으로 처리(→ 404).
   if (!UUID_RE.test(id)) return null;
@@ -87,9 +91,7 @@ export async function getItemById(id: string): Promise<ItemDetail | null> {
   const supabase = createReadClient();
   const { data, error } = await supabase
     .from("items")
-    .select(
-      `${ITEM_COLUMNS}, owner_id, owner:users(name), letters(type, content)`,
-    )
+    .select(`${ITEM_COLUMNS}, owner_id, owner:users(name)`)
     .eq("id", id)
     .maybeSingle();
 
@@ -100,13 +102,7 @@ export async function getItemById(id: string): Promise<ItemDetail | null> {
   const row = data as unknown as ItemRow & {
     owner_id: string;
     owner: { name: string } | null;
-    letters: { type: string; content: string }[] | null;
   };
-
-  const donorLetter =
-    row.letters?.find((l) => l.type === "donor_letter")?.content ?? null;
-  const recipientReply =
-    row.letters?.find((l) => l.type === "recipient_reply")?.content ?? null;
 
   return {
     ...toItem(row),
@@ -116,7 +112,5 @@ export async function getItemById(id: string): Promise<ItemDetail | null> {
     voiceUrl: row.voice_url,
     ownerName: row.owner?.name ?? "익명",
     createdAt: row.created_at,
-    donorLetter,
-    recipientReply,
   };
 }
