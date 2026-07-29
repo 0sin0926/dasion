@@ -47,28 +47,37 @@ export default function MyPage() {
   const [donations, setDonations] = useState<Item[]>([]);
   const [received, setReceived] = useState<ReceivedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [tab, setTab] = useState<"donated" | "received">("donated");
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     let alive = true;
     (async () => {
-      const uid = await bootstrapAuth();
-      if (!uid || !alive) {
+      try {
+        const uid = await bootstrapAuth();
+        if (!uid) {
+          // 세션 생성 실패(예: Supabase 환경변수 누락) → 무한 로딩 대신 에러 표시
+          if (alive) setLoadError(true);
+          return;
+        }
+        if (!alive) return;
+        setUserId(uid);
+        const [p, d, r] = await Promise.all([
+          getMyProfile(uid),
+          getMyDonations(uid),
+          getMyReceived(uid),
+        ]);
+        if (!alive) return;
+        setProfile(p);
+        setDonations(d);
+        setReceived(r);
+      } catch (err) {
+        console.error("[my] 데이터 조회 실패:", err);
+        if (alive) setLoadError(true);
+      } finally {
         if (alive) setLoading(false);
-        return;
       }
-      setUserId(uid);
-      const [p, d, r] = await Promise.all([
-        getMyProfile(uid),
-        getMyDonations(uid),
-        getMyReceived(uid),
-      ]);
-      if (!alive) return;
-      setProfile(p);
-      setDonations(d);
-      setReceived(r);
-      setLoading(false);
     })();
     return () => {
       alive = false;
@@ -86,6 +95,23 @@ export default function MyPage() {
           <p className="px-5 py-16 text-center text-[14px] text-ink-40">
             불러오는 중이에요…
           </p>
+        ) : loadError ? (
+          <div className="flex flex-col items-center gap-2 px-8 py-16 text-center">
+            <span className="text-4xl">😢</span>
+            <p className="text-[15px] font-bold text-ink">
+              내 정보를 불러오지 못했어요
+            </p>
+            <p className="text-[13px] leading-6 text-ink-40">
+              잠시 후 다시 시도해주세요. 문제가 계속되면 새로고침해 주세요.
+            </p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-2 rounded-xl bg-forest px-6 py-3 text-[14px] font-bold text-white"
+            >
+              새로고침
+            </button>
+          </div>
         ) : (
           <div className="space-y-5 px-4">
             {/* 프로필 카드 */}
