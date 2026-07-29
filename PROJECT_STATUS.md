@@ -209,6 +209,19 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 - `src/app/items/[id]/page.tsx` — 편지 잠금 표기
 - 검증: `tsc`·`build` 통과(`/items/[id]/edit`=ƒ), dev `/my` 200·잘못된 edit id 404. **Supabase 조치 불필요**
 
+### 2.14 Gemini API 연결 — 음성 AI 파이프 개통 (2026-07-29)
+음성→AI 트랙의 첫걸음. **STT/텍스트 생성 제공자를 OpenAI(Whisper+GPT)에서 Google Gemini로 변경.** 이유: ①무료 티어로 데모 트래픽 충분 ②Gemini는 오디오를 직접 입력받아 STT+생성을 한 API로 처리(제공자 1개로 단순화) ③사용자가 이미 Google 계정 보유.
+> ⚠️ 주의: 사용자의 Gemini **"Pro 구독"** 과 개발자용 **"Gemini API"** 는 완전 별개다. 구독엔 API가 안 딸려온다 — API는 Google AI Studio에서 무료 티어로 따로 발급.
+
+- `GEMINI_API_KEY` 발급(Google AI Studio) → `.env.local` 등록. **서버 전용 키**라 브라우저 노출 없음(`/api/` 라우트에서만 사용, `NEXT_PUBLIC_` 아님).
+- 파이프 스모크 테스트 완료: 서버 라우트에서 `generativelanguage.googleapis.com/v1beta` 호출(`x-goog-api-key` 헤더) → 실제 응답("연결 성공") 수신 확인.
+- **모델**: `models/gemini-flash-latest` 안정 별칭 채택. 특정 버전(예: `gemini-2.5-flash`)은 목록엔 떠도 생성 시 "신규 사용자 제공 중단"으로 404가 났고, `flash-latest`는 항상 최신 flash를 가리켜 버전 폐기에 안 깨짐. (2026-07 목록엔 `gemini-3.6-flash`, `gemini-3.5-flash` 등 존재)
+- 검증용 임시 라우트(`src/app/api/gemini-test/route.ts`)는 확인 후 **삭제**(키로 모델목록/생성이 열리는 공개 엔드포인트라 잔존 금지).
+
+**⚠️ Vercel 조치 필요**: 배포본에서도 쓰려면 Vercel에 `GEMINI_API_KEY` 등록해야 함. 서버 전용이라 **Sensitive로 넣어도 됨**(브라우저에 안 박혀도 되므로 — Supabase publishable 키와 반대). 미등록 시 로컬만 동작.
+
+**다음**: 등록 폼 마이크(음성 녹음, 현재 비활성) → `/api/stt`(Gemini 오디오 입력) → 텍스트 자동 채움. 이어서 게시글/편지 다듬기 라우트.
+
 ---
 
 ## 3. 주요 결정 사항
@@ -217,8 +230,8 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 |---|---|---|
 | 백엔드 | Next.js API Routes (Spring 아님) | Vercel은 Java 서버리스 미지원, 배포/CORS 관리 부담 ↓, Supabase·OpenAI SDK가 JS 1급 지원 |
 | DB/스토리지 | Supabase (PostgreSQL + Storage + Auth) | 인증+DB+파일 저장을 한 번에 해결 |
-| STT | OpenAI Whisper API | 기획서 명시 스택 |
-| 텍스트 생성 | GPT-4o API | 게시글/감사편지 생성 |
+| STT | **Google Gemini API** (기존 계획: OpenAI Whisper) | 무료 티어 + 오디오 직접 입력으로 STT+생성을 한 API로 처리, 사용자 Google 계정 보유 (2.14 참고) |
+| 텍스트 생성 | **Google Gemini** `gemini-flash-latest` (기존 계획: GPT-4o) | STT와 동일 제공자로 통일 |
 | 배포 | Vercel | 프론트+API Routes 동시 배포, 빠른 데모 링크 |
 | AWS 경험 방식 | **MVP 완성 후 AWS 재배포(+S3)** | Next.js 스택 유지한 채 같은 앱을 AWS Amplify에 재배포 + 사진/음성 저장을 S3로 이전. 데모는 Vercel로 안전하게 유지하면서 배포·버킷·IAM을 직접 경험. 비용 ≈ 무료(프리티어). RDS/EC2 풀 전환은 세팅·비용 부담으로 제외 |
 | 홈 디렉터리 git 정리 범위 | 로컬만 정리 | GitHub 원격(4bit_BE)은 팀 공유 저장소라 손대지 않음 |
@@ -284,7 +297,7 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 - **`0004_user_avatar.sql` 실행 여부 불확실** — 프로필 **사진 저장**이 배포본에서 되는지 확인. 안 되면 Supabase SQL Editor에서 `supabase/migrations/0004_user_avatar.sql` 실행(avatars 버킷 + `users.avatar_url` 컬럼). 지역/수정 등 나머지는 무관하게 동작.
 
 ### 다음 증분 후보 (우선순위 순 제안)
-1. **STT/GPT 라우트** — 등록/기부받기의 마이크(현재 비활성) 활성화. `/api/stt`(Whisper), `/api/generate-post`, `/api/generate-letter`(GPT-4o). **선행: OpenAI API 키 발급 → `.env.local`·Vercel에 `OPENAI_API_KEY` 등록**(Vercel에선 Sensitive OK, 서버 전용이라)
+1. **음성 AI 라우트 (Gemini 연결 완료 — 2.14 참고)** — 파이프는 이미 뚫림(`GEMINI_API_KEY` 로컬 등록·응답 확인). 남은 것: 등록/기부받기 마이크(현재 비활성) 활성화 → `/api/stt`(Gemini 오디오 입력) → 텍스트 자동 채움, 이어서 `/api/generate-post`·`/api/generate-letter`(게시글/편지 다듬기). **⚠️ 선행: Vercel에 `GEMINI_API_KEY` 등록(Sensitive OK, 서버 전용)** — 안 하면 배포본에선 음성 기능 안 됨
 2. **수령자 편지 열람** — 지금 전부 잠근 기부자 편지를, 기부 받은 수령자에게는 열리도록(matches 확인). 상세 페이지 주석에 자리 표시됨
 3. **기부자 편지 수정** — 물품 수정 시 편지도 고치려면 `letters`에 update/delete RLS 정책 필요(마이그레이션). 현재 물품 수정은 편지 제외
 4. **AI 프로필 캐릭터 생성** — 마이페이지 "나만의 캐릭터 만들기"(현재 비활성) — 이미지 생성 API
