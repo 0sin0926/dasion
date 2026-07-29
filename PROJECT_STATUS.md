@@ -300,6 +300,19 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 
 **⚠️ Supabase 조치 필요**: `supabase/migrations/0005_letters_visibility.sql`을 SQL Editor에서 실행해야 **편지 열람 제한이 실제로 적용**됨. 미실행 시 예전 공개 정책이 남아 본문이 그대로 노출됨(단 앱 UI는 세션 기준이라 화면상으론 이미 당사자에게만 보임).
 
+### 2.21 인앱 브라우저(카톡) 탈출 배너 — 음성인식 막힘 대응 (2026-07-29)
+카톡 링크로 들어오면 인앱 WebView라 마이크(getUserMedia/MediaRecorder)가 막혀 음성인식이 조용히 실패하던 문제. (엔드포인트·코드는 정상, Chrome/Safari에선 동작 확인.)
+
+- **원인**: iOS는 제3자 앱 WebView에 마이크/카메라를 잘 안 열어줌 + 권한 팝업 미노출 → 녹음이 빈 채로 나와 조용히 멈춤. 카톡·인스타 등 인앱 공통 제약.
+- **대응**: 인앱 감지 시 상단 안내 배너 + "브라우저에서 열기" 버튼 노출.
+  - **탈출 스킴**: 카톡은 전용 `kakaotalk://web/openExternal?url=`(기본 브라우저로 탈출, 양 플랫폼 안정적). 안드로이드 기타는 `intent://…package=com.android.chrome`(크롬 강제). iOS 기타는 `googlechromes://`(크롬 설치 시). ※ iOS는 애플 정책상 "크롬 강제"가 100%는 아님 → 기본 브라우저 탈출이 최선.
+  - **감지 방식**: UA 패턴(kakaotalk/instagram/fban/line 등). 클라 전용 값이라 `useSyncExternalStore`(서버 스냅샷 false)로 읽어 hydration 불일치·effect setState 린트 회피.
+- 검증: `tsc`·`eslint`·`build` 통과. ⚠️ 실제 카톡 인앱에서 배너 노출·탈출은 기기 확인 필요.
+
+**신규**: `src/lib/inAppBrowser.ts`, `src/components/InAppBrowserBanner.tsx`. **수정**: `src/app/layout.tsx`(배너 배치).
+
+> **음성인식 배포 이슈 해결됨(2.18 후속)**: Vercel에 `GOOGLE_CLOUD_PROJECT`/`GOOGLE_CLOUD_LOCATION`/`GCP_SA_JSON` 등록 + 재배포 완료. 배포본 `/api/stt`가 `server_no_config` 없이 Vertex 인증까지 통과 확인(더미 오디오는 INVALID_ARGUMENT=정상). 실제 마이크는 정품 브라우저에서 동작.
+
 ---
 
 ## 3. 주요 결정 사항
@@ -373,7 +386,7 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 - **배포 함정 해결됨**: Vercel `NEXT_PUBLIC_*`는 **Sensitive면 클라 번들에 안 박힘** → 비-Sensitive로 재등록해야 브라우저 동작(메모리에도 기록). `SUPABASE_SECRET_KEY`만 Sensitive.
 
 ### ⚠️ 확인 필요 (다음 세션에서 점검)
-- **🔴 Vercel에 Vertex env 미등록 — 배포본 음성 500** (2.18): Vercel dasion 프로젝트 Settings→Environment Variables에 `GOOGLE_CLOUD_PROJECT`=`gen-lang-client-0144557822`, `GOOGLE_CLOUD_LOCATION`=`us-central1`, `GCP_SA_JSON`=(sa-key.json 전체, Sensitive OK) 등록 후 Redeploy. **로컬은 정상, 배포본만 안 됨.** 기존 `GEMINI_API_KEY`는 미사용.
+- ~~**🔴 Vercel에 Vertex env 미등록 — 배포본 음성 500**~~ **해결(2026-07-29)**: `GOOGLE_CLOUD_PROJECT`/`GOOGLE_CLOUD_LOCATION`/`GCP_SA_JSON`(셋 다 Sensitive) 등록 + 재배포 → 배포본 `/api/stt` Vertex 인증 통과 확인. **단 카톡 인앱 브라우저에선 마이크가 막혀 안 됨 → 정품 브라우저 필요(2.21 배너로 안내).**
 - **브라우저 실제 마이크 녹음 수동 테스트** — 서버 파이프(Vertex STT)는 200 검증됨. 하드웨어 녹음은 헤드리스 불가라 미검증.
 - **(권장) 크레딧 소진/만료 대비 안전장치** — 유료 계정이라 크레딧(₩460k, 만료 2026-10-28) 소진 후 카드 청구됨. 예산 알림 + Vertex 일일 할당량 상한 걸어두면 안전.
 - **`0004_user_avatar.sql` 실행 여부 불확실** — 프로필 **사진 저장**이 배포본에서 되는지 확인. 안 되면 Supabase SQL Editor에서 실행.

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AuthBootstrap from "@/components/AuthBootstrap";
+import InAppBrowserBanner from "@/components/InAppBrowserBanner";
 
 export const metadata: Metadata = {
   title: "다시온 — 아이가 전하는 따뜻한 나눔",
@@ -30,6 +31,7 @@ export default function RootLayout({
         {/* 진입 시 익명 세션 + 프로필 보장 (화면 출력 없음) */}
         <AuthBootstrap />
         <div className="relative mx-auto flex min-h-screen w-full max-w-[var(--frame-max)] flex-col bg-page shadow-[0_0_40px_rgba(0,0,0,0.06)]">
+          <InAppBrowserBanner />
           {children}
         </div>
       </body>
