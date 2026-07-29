@@ -33,6 +33,11 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# service account 키 (Vertex AI) — 절대 커밋 금지
+*sa-key*.json
+*service-account*.json
+gcp-*.json
+
 # vercel
 .vercel
 

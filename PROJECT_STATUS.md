@@ -262,6 +262,18 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 
 **신규**: `src/lib/voice/questionAudioManifest.ts`, `public/audio/q/*.wav`(21개). **수정**: `src/lib/voice/speak.ts`(사전 오디오 재생), `src/app/register/page.tsx`(카테고리 최상단 이동).
 
+### 2.18 Gemini 호출을 AI Studio → Vertex AI로 전환 (Cloud 크레딧 결제) (2026-07-29)
+음성 STT/compose가 계속 429로 막히던 근본 원인과 해결. **모델·프롬프트·앱 기능은 그대로**, "호출하는 문"과 결제 방식만 교체.
+
+- **문제**: AI Studio Gemini API(키 방식)는 무료 **분당 20회** 한도(`gemini-2.5-flash-lite`). 가이드 연타/테스트 시 429. 유료 전환을 시도했더니 **신규 계정 선불(prepay) 강제** + **Google Cloud 무료 크레딧은 AI Studio/Gemini API에 사용 불가**(별개 주머니)라 오히려 전부 차단("prepayment credits are depleted").
+- **해결**: 같은 Gemini 모델을 **Vertex AI(`aiplatform.googleapis.com`)** 로 호출. Vertex는 Cloud 서비스라 프로젝트의 **무료 체험 크레딧(₩460,418, 2026-10-28 만료)** 이 그대로 적용됨 + 무료 티어보다 한도 넓음. 건당 ~0.2원이라 크레딧 = 약 200만 건(데모엔 사실상 0원).
+- **인증 변경**: API 키 → **서비스계정(JSON 키, ADC)**. GCP 콘솔에서 ①Vertex AI API 활성화 ②서비스계정에 **`Vertex AI User`(=UI엔 "Agent Platform 사용자", `roles/aiplatform.user`)** 권한 부여 ③JSON 키 발급.
+- **코드**: `@google/genai` SDK 설치. `src/server/ai/gemini.ts` 내부만 Vertex SDK 호출로 교체(`generateFromParts` 인터페이스 유지 → `/api/stt`·`/api/compose` 무변경). 인증은 로컬=`GOOGLE_APPLICATION_CREDENTIALS`(파일경로), Vercel=`GCP_SA_JSON`(JSON 전체 env)로 분기. `.gitignore`에 SA 키 커밋 방지.
+- **env**: `GOOGLE_CLOUD_PROJECT=gen-lang-client-0144557822`, `GOOGLE_CLOUD_LOCATION=us-central1`, (로컬)`GOOGLE_APPLICATION_CREDENTIALS=<sa-key.json 절대경로>`. 기존 `GEMINI_API_KEY`는 미사용.
+- **검증**: 독립 스크립트로 Vertex 텍스트·오디오 STT 200 확인, 실제 `/api/stt` 라우트도 200(어미보정 정상). `tsc` 통과.
+
+**⚠️ 남은 조치**: ①**Vercel env 미등록** — 배포본 음성 기능이 아직 안 됨. Vercel에 `GOOGLE_CLOUD_PROJECT`/`GOOGLE_CLOUD_LOCATION`/`GCP_SA_JSON`(JSON 전체) 등록 필요. ②(권장) 예산 알림 + Vertex 일일 할당량 상한으로 크레딧 소진/만료 이후 카드 청구 방지. ③브라우저 실제 마이크 녹음 수동 테스트.
+
 ---
 
 ## 3. 주요 결정 사항
@@ -271,7 +283,8 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 | 백엔드 | Next.js API Routes (Spring 아님) | Vercel은 Java 서버리스 미지원, 배포/CORS 관리 부담 ↓, Supabase·OpenAI SDK가 JS 1급 지원 |
 | DB/스토리지 | Supabase (PostgreSQL + Storage + Auth) | 인증+DB+파일 저장을 한 번에 해결 |
 | STT | **Google Gemini API** (기존 계획: OpenAI Whisper) | 무료 티어 + 오디오 직접 입력으로 STT+생성을 한 API로 처리, 사용자 Google 계정 보유 (2.14 참고) |
-| 텍스트 생성 | **Google Gemini** `gemini-2.5-flash-lite` (기존 계획: GPT-4o) | STT와 동일 제공자로 통일. **모델은 무료 티어 한도로 선택**: `gemini-flash-latest`(=3.6-flash)는 무료 분당 20건이라 가이드 STT 연타 시 429, `gemini-2.0-flash`는 무료 0건. `2.5-flash-lite`가 오디오 지원+무료 한도 넉넉 (2.17 참고) |
+| 텍스트 생성 | **Google Gemini** `gemini-2.5-flash-lite` (기존 계획: GPT-4o) | STT와 동일 제공자로 통일. `2.5-flash-lite`가 오디오 지원+한도 넉넉 (2.17 참고) |
+| Gemini 호출 경로 | **Vertex AI** (AI Studio API 키 아님) | AI Studio 무료 20/분·선불강제·Cloud크레딧 불가로 막힘 → 같은 모델을 Vertex로 호출해 **Cloud 크레딧 결제 + 넓은 한도**. 서비스계정(ADC) 인증 (2.18 참고) |
 | 배포 | Vercel | 프론트+API Routes 동시 배포, 빠른 데모 링크 |
 | AWS 경험 방식 | **MVP 완성 후 AWS 재배포(+S3)** | Next.js 스택 유지한 채 같은 앱을 AWS Amplify에 재배포 + 사진/음성 저장을 S3로 이전. 데모는 Vercel로 안전하게 유지하면서 배포·버킷·IAM을 직접 경험. 비용 ≈ 무료(프리티어). RDS/EC2 풀 전환은 세팅·비용 부담으로 제외 |
 | 홈 디렉터리 git 정리 범위 | 로컬만 정리 | GitHub 원격(4bit_BE)은 팀 공유 저장소라 손대지 않음 |
