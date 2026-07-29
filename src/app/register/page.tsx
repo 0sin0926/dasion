@@ -110,7 +110,38 @@ export default function RegisterPage() {
 
       {/* 본문 */}
       <main className="no-scrollbar flex-1 space-y-6 overflow-y-auto px-4 py-6 pb-28">
-        {/* 섹션 1 — 물품 정보 */}
+        {/* 섹션 1 — 카테고리 (가장 먼저 선택 → 질문 가이드가 카테고리별로 나옴) */}
+        <section className="space-y-4 rounded-[24px] bg-white p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+          <h2 className="text-lg font-bold">어떤 물품인가요?</h2>
+          <div className="grid grid-cols-3 gap-2">
+            {REG_CATEGORIES.map((c) => {
+              const active = c.key === selected;
+              return (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => setSelected(c.key)}
+                  className={`flex flex-col items-center justify-center rounded-xl border p-3 transition-colors ${
+                    active
+                      ? "border-[#3D6B3D] bg-[#EFF7EF]"
+                      : "border-[#D1D5DB] bg-white hover:border-[#3D6B3D]"
+                  }`}
+                >
+                  <span className="mb-1 text-2xl">{c.emoji}</span>
+                  <span
+                    className={`text-[11px] font-medium ${
+                      active ? "text-[#3D6B3D]" : "text-gray-600"
+                    }`}
+                  >
+                    {c.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* 섹션 2 — 물품 정보 */}
         <section className="space-y-4 rounded-[24px] bg-white p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
           <h2 className="text-lg font-bold">무엇을 나누고 싶나요?</h2>
           <input
@@ -195,37 +226,6 @@ export default function RegisterPage() {
             )}
           </div>
           <p className="text-[11px] text-[#999999]">최대 5장까지 등록이 가능해요.</p>
-        </section>
-
-        {/* 섹션 3 — 카테고리 */}
-        <section className="space-y-4 rounded-[24px] bg-white p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
-          <h2 className="text-lg font-bold">어떤 물품인가요?</h2>
-          <div className="grid grid-cols-3 gap-2">
-            {REG_CATEGORIES.map((c) => {
-              const active = c.key === selected;
-              return (
-                <button
-                  key={c.key}
-                  type="button"
-                  onClick={() => setSelected(c.key)}
-                  className={`flex flex-col items-center justify-center rounded-xl border p-3 transition-colors ${
-                    active
-                      ? "border-[#3D6B3D] bg-[#EFF7EF]"
-                      : "border-[#D1D5DB] bg-white hover:border-[#3D6B3D]"
-                  }`}
-                >
-                  <span className="mb-1 text-2xl">{c.emoji}</span>
-                  <span
-                    className={`text-[11px] font-medium ${
-                      active ? "text-[#3D6B3D]" : "text-gray-600"
-                    }`}
-                  >
-                    {c.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
         </section>
 
         {/* 섹션 4 — 편지 */}

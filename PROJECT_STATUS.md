@@ -248,6 +248,20 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 
 **남은 조치**: 브라우저 수동 테스트(가이드 낭독+녹음, VoiceMic 리팩터 후 정상). 후속: 편지용 가이드, `voice_url` 저장.
 
+### 2.17 음성 등록 다듬기 — 카테고리 우선 + 자연스러운 TTS (2026-07-29)
+2.16 사용자 피드백 반영.
+
+- **카테고리 선택을 등록 폼 맨 위로 이동**: 가이드 도우미가 카테고리별 질문을 받으려면 카테고리가 먼저 정해져야 함(이전엔 카테고리 섹션이 아래라 전용 질문이 안 떴음).
+- **질문 낭독을 브라우저 TTS → Gemini TTS(사전 생성)로 교체**: 브라우저 내장 음성이 너무 어색. 질문이 **고정 세트**라 미리 음성 파일로 생성해두고 재생 → 자연스러운 목소리 + 런타임 비용 0 + 즉시 재생.
+  - 음성 **Leda**(발랄·어린 톤) 채택(Kore/Sulafat/Aoede/Puck 비교 후).
+  - 모델 `gemini-2.5-flash-preview-tts`, 응답 PCM(L16 24kHz) → WAV 헤더 래핑 → `public/audio/q/<textHash>.wav` 저장(리포 커밋). 텍스트→경로 매핑은 `src/lib/voice/questionAudioManifest.ts`.
+  - `src/lib/voice/speak.ts`: 매니페스트에 있으면 오디오 파일 재생, 없으면 브라우저 TTS 폴백.
+  - 생성은 임시 라우트(`/api/tts-test`)로 서버(키 보유)에서 일괄 생성 후 **라우트 삭제**(공개 생성 엔드포인트 잔존 금지).
+- **⚠️ 21/22 생성됨**: 무료 티어 TTS 일일/분당 쿼터로 "아기 몇 살 때 썼어?"(유아용) 1개 미생성 → 현재 그 질문만 브라우저 TTS 폴백. **쿼터 리셋 후 그 파일만 재생성하면 매니페스트에 추가되어 자동 교체.** (재생성: 임시 라우트 재작성해 해당 텍스트만 Leda로 뽑아 `public/audio/q/`에 저장 + 매니페스트 갱신)
+- 검증: `tsc`·`build` 통과, WAV 유효성(RIFF/WAVE)·HTTP 200 `audio/wav` 확인. ⚠️ 브라우저 실제 낭독 자연스러움은 사용자 확인 필요.
+
+**신규**: `src/lib/voice/questionAudioManifest.ts`, `public/audio/q/*.wav`(21개). **수정**: `src/lib/voice/speak.ts`(사전 오디오 재생), `src/app/register/page.tsx`(카테고리 최상단 이동).
+
 ---
 
 ## 3. 주요 결정 사항
