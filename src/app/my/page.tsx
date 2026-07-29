@@ -117,6 +117,8 @@ export default function MyPage() {
             {/* 프로필 카드 */}
             {profile && userId && (
               <ProfileCard
+                // 편집↔뷰 전환 시 리마운트해 폼을 현재 프로필로 초기화(effect 프리필 대체)
+                key={editing ? "editing" : "view"}
                 profile={profile}
                 editing={editing}
                 onEdit={() => setEditing(true)}
@@ -238,21 +240,7 @@ function ProfileCard({
   const [showPhotoMenu, setShowPhotoMenu] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 편집 진입 시 현재 값으로 초기화
-  useEffect(() => {
-    if (editing) {
-      const p = parseRegion(profile.region);
-      setName(profile.name);
-      setSido(p.sido);
-      setSigungu(p.sigungu);
-      setRole(profile.role);
-      setAvatarFile(null);
-      setAvatarPreview(profile.avatarUrl);
-      setShowPhotoMenu(false);
-      setError(null);
-    }
-  }, [editing, profile]);
-
+  // 편집 진입 시 프리필은 상위에서 key로 리마운트해 처리(위 useState 초기값이 곧 프리필).
   const sigunguOptions = getSigungu(sido);
 
   function handlePickPhoto(e: React.ChangeEvent<HTMLInputElement>) {

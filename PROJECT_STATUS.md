@@ -347,10 +347,13 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 - **배포 함정 해결됨**: Vercel `NEXT_PUBLIC_*`는 **Sensitive면 클라 번들에 안 박힘** → 비-Sensitive로 재등록해야 브라우저 동작(메모리에도 기록). `SUPABASE_SECRET_KEY`만 Sensitive.
 
 ### ⚠️ 확인 필요 (다음 세션에서 점검)
-- **`0004_user_avatar.sql` 실행 여부 불확실** — 프로필 **사진 저장**이 배포본에서 되는지 확인. 안 되면 Supabase SQL Editor에서 `supabase/migrations/0004_user_avatar.sql` 실행(avatars 버킷 + `users.avatar_url` 컬럼). 지역/수정 등 나머지는 무관하게 동작.
+- **🔴 Vercel에 Vertex env 미등록 — 배포본 음성 500** (2.18): Vercel dasion 프로젝트 Settings→Environment Variables에 `GOOGLE_CLOUD_PROJECT`=`gen-lang-client-0144557822`, `GOOGLE_CLOUD_LOCATION`=`us-central1`, `GCP_SA_JSON`=(sa-key.json 전체, Sensitive OK) 등록 후 Redeploy. **로컬은 정상, 배포본만 안 됨.** 기존 `GEMINI_API_KEY`는 미사용.
+- **브라우저 실제 마이크 녹음 수동 테스트** — 서버 파이프(Vertex STT)는 200 검증됨. 하드웨어 녹음은 헤드리스 불가라 미검증.
+- **(권장) 크레딧 소진/만료 대비 안전장치** — 유료 계정이라 크레딧(₩460k, 만료 2026-10-28) 소진 후 카드 청구됨. 예산 알림 + Vertex 일일 할당량 상한 걸어두면 안전.
+- **`0004_user_avatar.sql` 실행 여부 불확실** — 프로필 **사진 저장**이 배포본에서 되는지 확인. 안 되면 Supabase SQL Editor에서 실행.
 
 ### 다음 증분 후보 (우선순위 순 제안)
-1. **음성 등록 완료 (2.15 참고)** — 등록 폼 마이크(설명·편지)가 실제 Gemini STT로 동작(서버 검증됨). **남은 것: ①Vercel에 `GEMINI_API_KEY` 등록(Sensitive OK) — 배포본 필수 ②브라우저 실제 녹음 수동 테스트 ③기부받기(`ReceiveForm`) 마이크도 `VoiceMic`로 교체**
+1. **음성 등록 — 배포본 마무리** — 로컬은 Vertex로 완전 동작(설명·편지·가이드·감사편지 마이크 전부). **남은 것: ①위 Vercel env 등록 ②브라우저 실제 녹음 테스트.** (`ReceiveForm` 마이크 교체·429 안내·어미보정은 완료)
 2. **수령자 편지 열람** — 지금 전부 잠근 기부자 편지를, 기부 받은 수령자에게는 열리도록(matches 확인). 상세 페이지 주석에 자리 표시됨
 3. **기부자 편지 수정** — 물품 수정 시 편지도 고치려면 `letters`에 update/delete RLS 정책 필요(마이그레이션). 현재 물품 수정은 편지 제외
 4. **AI 프로필 캐릭터 생성** — 마이페이지 "나만의 캐릭터 만들기"(현재 비활성) — 이미지 생성 API

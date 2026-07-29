@@ -1,7 +1,7 @@
 // 녹음 → /api/stt(Gemini) → 텍스트 결과를 콜백으로 돌려주는 재사용 훅.
 // VoiceMic(자유 녹음)와 GuidedVoiceSheet(질문별 답)이 공유한다.
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type RecorderStatus = "idle" | "recording" | "processing" | "error";
 
@@ -28,8 +28,11 @@ export function useVoiceRecorder(opts: {
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   // 최신 opts를 참조하도록 ref에 보관(비동기 onstop 시점에도 현재 값 사용).
+  // 렌더 중 ref를 만지지 않도록 effect에서 갱신(async 콜백은 훨씬 뒤라 문제없음).
   const optsRef = useRef(opts);
-  optsRef.current = opts;
+  useEffect(() => {
+    optsRef.current = opts;
+  });
 
   function stopTracks() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
