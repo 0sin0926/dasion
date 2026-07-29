@@ -105,6 +105,8 @@ export async function getItemById(id: string): Promise<ItemDetail | null> {
 
   const donorLetter =
     row.letters?.find((l) => l.type === "donor_letter")?.content ?? null;
+  const recipientReply =
+    row.letters?.find((l) => l.type === "recipient_reply")?.content ?? null;
 
   return {
     ...toItem(row),
@@ -115,5 +117,6 @@ export async function getItemById(id: string): Promise<ItemDetail | null> {
     ownerName: row.owner?.name ?? "익명",
     createdAt: row.created_at,
     donorLetter,
+    recipientReply,
   };
 }

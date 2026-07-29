@@ -16,6 +16,8 @@ export default async function ItemDetailPage({
 
   const cat = CATEGORY_MAP[item.category];
   const hasPhoto = item.photoUrls.length > 0;
+  // 나눔이 성사되면(matched/completed) 기부자 편지 잠금을 풀고 감사 편지도 함께 보여준다.
+  const isTaken = item.status !== "available";
 
   return (
     <div className="flex flex-1 flex-col bg-page">
@@ -62,29 +64,46 @@ export default async function ItemDetailPage({
             </p>
           </div>
 
-          {/* 기부자 편지 — 받기 전엔 잠금(내용 숨김)해 기대감을 준다.
-              (추후: 기부 받은 수령자에게는 열람 가능하도록 연결) */}
+          {/* 기부자 편지 — 나눔 전(available)엔 잠금(기대감), 나눔 성사 후엔 본문 공개 */}
           {item.donorLetter?.trim() && (
             <div className="mt-3 rounded-2xl border border-[#FDE3CE] bg-[#FFF1E5] p-4">
               <p className="mb-1 text-[12px] font-bold text-[#B96A25]">
                 💌 마음을 담은 편지
               </p>
-              <p className="flex items-center gap-1.5 text-[13px] font-semibold leading-6 text-[#B96A25]">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="shrink-0"
-                >
-                  <rect x="3" y="11" width="18" height="10" rx="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-                기부를 받고 편지를 확인해봐요!
+              {isTaken ? (
+                <p className="whitespace-pre-wrap text-[13px] leading-6 text-[#8A4E18]">
+                  {item.donorLetter}
+                </p>
+              ) : (
+                <p className="flex items-center gap-1.5 text-[13px] font-semibold leading-6 text-[#B96A25]">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="shrink-0"
+                  >
+                    <rect x="3" y="11" width="18" height="10" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  기부를 받고 편지를 확인해봐요!
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* 받은 감사 편지 — 수혜자 답장(recipient_reply). 나눔 성사 후에만 존재 */}
+          {item.recipientReply?.trim() && (
+            <div className="mt-3 rounded-2xl border border-[#CFE9D6] bg-[#EFF7EF] p-4">
+              <p className="mb-1 text-[12px] font-bold text-forest">
+                💌 받은 감사 편지
+              </p>
+              <p className="whitespace-pre-wrap text-[13px] leading-6 text-[#2F6B3D]">
+                {item.recipientReply}
               </p>
             </div>
           )}

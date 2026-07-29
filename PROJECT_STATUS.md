@@ -286,6 +286,16 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 
 **신규**: `src/lib/letters/getMyReceivedLetters.ts`. **수정**: `src/types/profile.ts`(`ReceivedLetter`), `src/app/my/page.tsx`(3번째 탭 + `LetterCard`).
 
+### 2.20 물품 상세 — 나눔 후 편지 공개(기부자 잠금 해제 + 감사 편지 노출) (2026-07-29)
+2.19 후속. 기부한 물품 상세를 열면 이미 나눔 완료인데도 기부자 편지가 잠겨 있고(내가 쓴 편지인데), 받은 감사 편지도 안 보이던 문제 해결.
+
+- **기부자 편지 잠금 조건 변경**: `available`(나눔 전)엔 기존대로 잠금("기부를 받고 편지를 확인해봐요!", 기대감), **`matched`/`completed`(나눔 성사 후)엔 본문 공개**. 판단은 `item.status !== "available"`(`isTaken`) — 세션 불필요한 상태 기반이라 상세는 서버 컴포넌트 유지.
+- **받은 감사 편지 노출**: 상세에 `recipient_reply` 편지 카드 추가(초록 톤 `#EFF7EF`/`#CFE9D6`으로 주황 기부자 편지와 구분). 나눔 성사 후에만 존재.
+- **DB/쿼리**: `getItemById`가 이미 `letters(type, content)` 전부 조인 중 → `recipient_reply`만 추가 추출. 마이그레이션 불필요.
+- 검증: `tsc`·`eslint`·`build` 통과.
+
+**수정**: `src/types/item.ts`(`ItemDetail.recipientReply`), `src/server/items/queries.ts`(추출), `src/app/items/[id]/page.tsx`(잠금 분기 + 감사 편지 카드). → 후속 과제 #2("수령자 편지 열람") 상당 부분 해소.
+
 ---
 
 ## 3. 주요 결정 사항
