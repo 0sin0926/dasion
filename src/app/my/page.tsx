@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import BottomNav from "@/components/BottomNav";
 import MyItemCard from "@/components/my/MyItemCard";
 import { bootstrapAuth } from "@/lib/supabase/auth";
@@ -249,15 +248,14 @@ function formatDate(iso: string): string {
 
 /**
  * 받은 편지 카드 — 수혜자가 보낸 감사 편지(recipient_reply)를 편지지 톤(주황)으로 보여준다.
- * 상세로 이동하면 원본 물품/편지 맥락을 함께 볼 수 있게 물품 상세로 링크한다.
+ * 본문을 카드에 그대로 펼쳐 보여주므로 링크로 이동하지 않는다.
+ * (물품 상세로 보내면 "받기 전 잠금"된 기부자 편지가 뜨는데, 그건 이 받은 편지와
+ *  다른 편지라 오히려 혼란을 준다 — 자기완결형 편지함 카드로 둔다.)
  */
 function LetterCard({ letter }: { letter: ReceivedLetter }) {
   const cat = CATEGORY_MAP[letter.item.category];
   return (
-    <Link
-      href={`/items/${letter.item.id}`}
-      className="block rounded-2xl border border-[#FDE3CE] bg-[#FFF1E5] p-4 shadow-[0_0.5px_0.5px_0_rgba(0,0,0,0.15)]"
-    >
+    <div className="rounded-2xl border border-[#FDE3CE] bg-[#FFF1E5] p-4 shadow-[0_0.5px_0.5px_0_rgba(0,0,0,0.15)]">
       <div className="flex items-center justify-between gap-2">
         <p className="flex min-w-0 items-center gap-1.5 text-[12px] font-bold text-[#B96A25]">
           <span className="shrink-0">💌</span>
@@ -275,7 +273,7 @@ function LetterCard({ letter }: { letter: ReceivedLetter }) {
       <p className="mt-2 whitespace-pre-wrap text-[13px] leading-6 text-[#8A4E18]">
         {letter.content}
       </p>
-    </Link>
+    </div>
   );
 }
 
