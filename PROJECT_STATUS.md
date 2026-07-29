@@ -1,7 +1,8 @@
 # Dasion 프로젝트 진행 현황
 
-> 마지막 업데이트: 2026-07-28
+> 마지막 업데이트: 2026-07-29
 > 다음 세션에서 이어서 작업할 때 이 문서를 먼저 참고할 것.
+> **현재 상태 요약은 맨 아래 "7. 다음 액션"을 먼저 보세요.**
 
 ## 1. 프로젝트 개요
 
@@ -264,17 +265,33 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 
 ## 7. 다음 액션 (새 세션에서 이어서 진행)
 
-1. `npm run dev`로 로컬 화면 확인
-2. ~~`https://github.com/0sin0926/dasion`으로 push~~ 완료 (2.3 참고)
-3. ~~Vercel 프로젝트 생성 + 연동~~ 완료 — 배포 URL: https://dasion-zeta.vercel.app
-   (main push 시 자동 재배포 확인됨)
-4. ~~Supabase 프로젝트 생성 + 스키마(`users, items, matches, letters`) 적용~~ 완료
-   (2.5 참고 — 로컬/Vercel 환경변수까지 전부 등록 완료)
-5. ~~Figma 전달받아 홈 피드 구현~~ 완료 (2.6 참고). 순서: ~~홈 피드~~ → **물품 등록 플로우(다음)**
-   → 물품 상세+기부받기 → 마이페이지
-6. **← 다음 세션 시작 지점.** 물품 등록 플로우 화면 구현(`/register`) — 카테고리 선택 → 이름
-   입력 → 음성 설명 → 사진 업로드(0/5) → 편지 작성 → "물품 등록하기". 등록 스크린샷 이미
-   확보됨. 하단 탭 중앙 FAB·홈 CTA가 `/register`로 연결돼 있음(현재 미구현 라우트)
-7. STT/GPT API 라우트 연결해서 실제 등록 플로우 완성 → 재배포
-8. 물품 상세+기부받기, 마이페이지 구현
-9. MVP 안정화 후 AWS 재배포(+S3) 학습 트랙 진행 (3번 결정 참고)
+### 현재 상태 (2026-07-29 기준)
+**P0 화면 흐름은 백엔드까지 전부 연결·배포 완료.** 로컬·배포본 둘 다 정상 동작 확인됨.
+
+완료된 것(로컬+배포):
+- 홈 피드(실데이터) + 커뮤니티 통계 실연동(items/users/matches count) + 로고 둥근 폰트(Jua)
+- 물품 등록(`/register`) — 익명 인증으로 실제 저장(사진 Storage + items + 기부자 편지)
+- 물품 상세 — 실데이터, 기부자 편지는 **받기 전 잠금**("기부를 받고 편지를 확인해봐요!")
+- 기부 받기(`/items/[id]/receive`) — `claim_item` RPC로 매칭+상태갱신+감사편지(선택) 원자 처리
+- 마이페이지(`/my`) — 프로필 편집(이름/역할/**사진**/**시·도→시군구 지역**) + 기부한/받은 목록 + **내 물품 수정**(`/items/[id]/edit`)
+
+인프라:
+- GitHub `0sin0926/dasion` main push → Vercel 자동 배포(https://dasion-zeta.vercel.app)
+- Supabase(`tpdezuisujvteuvfavzj`, seoul) — 스키마 + RLS + Storage + `claim_item` RPC
+- **배포 함정 해결됨**: Vercel `NEXT_PUBLIC_*`는 **Sensitive면 클라 번들에 안 박힘** → 비-Sensitive로 재등록해야 브라우저 동작(메모리에도 기록). `SUPABASE_SECRET_KEY`만 Sensitive.
+
+### ⚠️ 확인 필요 (다음 세션에서 점검)
+- **`0004_user_avatar.sql` 실행 여부 불확실** — 프로필 **사진 저장**이 배포본에서 되는지 확인. 안 되면 Supabase SQL Editor에서 `supabase/migrations/0004_user_avatar.sql` 실행(avatars 버킷 + `users.avatar_url` 컬럼). 지역/수정 등 나머지는 무관하게 동작.
+
+### 다음 증분 후보 (우선순위 순 제안)
+1. **STT/GPT 라우트** — 등록/기부받기의 마이크(현재 비활성) 활성화. `/api/stt`(Whisper), `/api/generate-post`, `/api/generate-letter`(GPT-4o). **선행: OpenAI API 키 발급 → `.env.local`·Vercel에 `OPENAI_API_KEY` 등록**(Vercel에선 Sensitive OK, 서버 전용이라)
+2. **수령자 편지 열람** — 지금 전부 잠근 기부자 편지를, 기부 받은 수령자에게는 열리도록(matches 확인). 상세 페이지 주석에 자리 표시됨
+3. **기부자 편지 수정** — 물품 수정 시 편지도 고치려면 `letters`에 update/delete RLS 정책 필요(마이그레이션). 현재 물품 수정은 편지 제외
+4. **AI 프로필 캐릭터 생성** — 마이페이지 "나만의 캐릭터 만들기"(현재 비활성) — 이미지 생성 API
+5. **P1 화면** — 지역/기록 탭 실데이터, 커뮤니티 통계 위젯 확장
+6. **AWS 재배포(+S3)** 학습 트랙 (3번 결정 참고)
+
+### 세션 시작 루틴
+1. `npm run dev` → 로컬 확인 (로컬·배포 **같은 Supabase DB** 공유. 단 익명 로그인 정체성은 origin별로 다름)
+2. 작업 → `tsc`·`npm run build` 통과 확인 → 커밋 → main push → Vercel 자동 배포
+3. Supabase 스키마 변경은 `supabase/migrations/*.sql` 추가 후 SQL Editor에서 수동 실행(자동 적용 아님)
