@@ -93,6 +93,62 @@ Checklist "Connect Git Repository" 완료). 참고로 빌드 중 홈 디렉터�
 - **미확정/추후 교체**: 서브 그린 정확값·카테고리 아이콘 SVG(현재 이모지)·헤더 로고 얼굴(현재
   손흔들기 캐릭터 크롭)은 정확한 에셋 받으면 교체
 
+### 2.7 백엔드 연결 시작 — 토대 + 읽기 계층 (2026-07-28)
+Mock을 걷어내고 실제 Supabase 조회로 홈 피드/상세를 연결. 아키텍처 원칙 확정:
+- **읽기(피드/상세)**: Next 16 권장대로 Route Handler 없이 **서버 컴포넌트에서 직접 조회**
+- **쓰기(등록/기부받기)**: 익명 세션을 가진 **브라우저 클라이언트에서 직접** → RLS `auth.uid()` 자동 충족
+- **AI(STT/GPT)**: OpenAI secret key가 필요하므로 `app/api/` Route Handler로 (다음 증분)
+- **인증 전략**: **익명 인증(Anonymous Sign-in)** 채택 — 기기별 영구 UUID 유저가 생겨
+  기부함/기부받음 개인 기록까지 정상 축적. 로그인 화면은 이후 "업그레이드"로 얹음
+
+구현/변경 파일:
+- `@supabase/supabase-js` 설치
+- `src/lib/supabase/client.ts` — 브라우저 클라이언트(싱글턴, 세션 유지)
+- `src/server/supabase/read-client.ts` — 서버 읽기 전용 클라이언트(publishable 키, RLS 유지)
+- `src/server/items/queries.ts` — `getItems(category?)`, `getItemById(id)`(등록자·기부자 편지 조인, UUID 가드로 잘못된 id는 404)
+- `src/types/item.ts` — `ItemStatus`에 `completed` 추가, `ItemDetail` 타입 신설
+- `src/app/page.tsx` — `getItems()` 연결(조회 실패 시 빈 목록 graceful fallback)
+- `src/app/items/[id]/page.tsx` — `getItemById()` 연결 + 사진/설명/기부자 편지 렌더
+- `supabase/schema.sql` + `supabase/migrations/0001_category_books.sql` — 카테고리 `books_stationery`→`books` 통일
+- `next.config.ts` — `images.remotePatterns`에 Supabase Storage 도메인 허용
+- 검증: `tsc` 통과, dev에서 홈 200(현재 DB 비어 빈 상태 정상), 잘못된/없는 상세 id 모두 404
+
+### 2.8 익명 인증 + 물품 등록 쓰기 (2026-07-28)
+"로그인 화면 없이 진짜 유저" 전략(익명 인증)으로 등록 플로우를 실제 저장까지 연결. 실제
+Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업로드→items→letters→조회→정리 전부 통과).
+
+구현/변경 파일:
+- `src/lib/supabase/auth.ts` — `bootstrapAuth()`: 익명 세션 보장 + `users` 프로필 행 보장(upsert, 기본값 role=donor_parent/name=게스트, 기존값은 보존)
+- `src/components/AuthBootstrap.tsx` + `layout.tsx` — 앱 진입 시 세션/프로필 자동 보장(화면 출력 없음)
+- `src/lib/items/registerItem.ts` — 클라이언트에서 익명 세션으로 직접 쓰기(사진 Storage 업로드 → items insert → 기부자 letters insert). RLS `auth.uid()` 자동 충족
+- `src/app/register/page.tsx` — 폼 실 저장: 이름/설명/편지 제어 입력, 사진 업로드+미리보기(최대 5장), 제출/에러 상태. 마이크(STT)는 다음 증분까지 비활성 표시
+- `supabase/migrations/0002_storage.sql` — Storage 버킷(item-photos, item-voice) + 업로드/읽기 정책
+
+**Supabase 조치 완료(2026-07-28)**: ①Anonymous sign-ins 활성화 ②0001(카테고리) 실행 ③0002(Storage) 실행 — 모두 적용 확인됨.
+
+**다음 증분 후보**:
+- ~~물품 상세 "기부 받기" → `matches` insert + item status 갱신~~ 완료 (2.9 참고)
+- 마이페이지: 프로필 이름/지역 편집 + 내가 기부한/받은 물품 목록
+- STT/GPT 라우트(`/api/stt`, `/api/generate-post`, `/api/generate-letter`) → 등록 플로우 마이크 활성화. **선행: OpenAI API 키 발급 후 `.env.local`·Vercel에 `OPENAI_API_KEY` 등록**
+
+### 2.9 기부 받기(claim) + 감사 편지 (2026-07-29)
+물품 상세의 "기부 받기"를 실제 매칭까지 연결. 등록 플로우처럼 **감사 편지(선택)** 를 함께 보낼 수 있는 전용 화면 추가.
+
+- **핵심 결정 — 왜 RPC인가**: 기부 받기는 ①`matches` insert(수령자=나) ②`items.status='matched'` 갱신을 한 번에 해야 하는데, 수령자는 소유자가 아니라 `items_update_own` RLS에 막힘 + 동시 수령 경쟁 상태 문제. → `security definer` 함수 `claim_item(p_item_id, p_reply)` 하나로 RLS 우회 + 행 잠금(`for update`)으로 원자 처리. 편지(`p_reply`)는 선택 인자로, 값 있으면 같은 트랜잭션에서 `recipient_reply` 편지까지 저장(안 쓰면 매칭만).
+- **아키텍처 일관성**: 공개 읽기(피드/상세)는 서버 컴포넌트(read-client), 개인/인증 쓰기(등록·기부받기)는 브라우저 클라이언트(익명 세션). 소유자 판별(내 물품이면 버튼 비활성)도 세션이 브라우저에만 있으므로 클라이언트에서 수행.
+
+구현/변경 파일:
+- `supabase/migrations/0003_claim_item.sql` — `claim_item` RPC (**아직 Supabase에서 미실행 — 아래 조치 필요**)
+- `src/lib/matches/claimItem.ts` — 익명 세션으로 `rpc("claim_item")` 호출, RPC 에러코드(`already_taken`, `cannot_claim_own_item` 등) → 한국어 안내 매핑
+- `src/server/items/queries.ts` + `src/types/item.ts` — `getItemById`가 `ownerId` 함께 반환(버튼 소유자 판별용)
+- `src/components/items/ReceiveForm.tsx` — 기부받기+편지 폼(등록 편지 카드 스타일 그대로, 주황 음성카드+노란 textarea, 마이크는 STT까지 비활성)
+- `src/components/items/ReceiveButton.tsx` — 상세 하단 CTA. 매칭완료/본인물품이면 비활성, 아니면 `/items/[id]/receive`로 이동
+- `src/app/items/[id]/receive/page.tsx` + `receive/complete/page.tsx` — 기부받기 화면 + 완료 화면
+- `src/app/items/[id]/page.tsx` — 죽어있던 "기부 받기" 버튼을 `ReceiveButton`으로 교체
+- 검증: `tsc`·`npm run build` 통과(새 라우트 3개 등록 확인)
+
+**⚠️ Supabase 조치 필요(다음 세션 시작 전)**: `supabase/migrations/0003_claim_item.sql`을 SQL Editor에서 실행해야 기부받기가 실제 동작함(0001/0002 실행했던 것과 동일 절차).
+
 ---
 
 ## 3. 주요 결정 사항

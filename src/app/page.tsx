@@ -3,11 +3,18 @@ import HeroSection from "@/components/home/HeroSection";
 import ItemFeed from "@/components/home/ItemFeed";
 import DonateCta from "@/components/home/DonateCta";
 import BottomNav from "@/components/BottomNav";
-import { MOCK_ITEMS } from "@/server/mock/items";
+import { getItems } from "@/server/items/queries";
+import type { Item } from "@/types/item";
 
-export default function Home() {
-  // TODO: Supabase `items` 테이블 연동 시 MOCK_ITEMS 대신 서버 조회로 교체
-  const items = MOCK_ITEMS;
+export default async function Home() {
+  // Supabase `items` 테이블에서 나눔 대기 물품을 조회.
+  // 조회 실패(환경변수 누락/네트워크)여도 화면이 통째로 깨지지 않도록 빈 목록으로 대체.
+  let items: Item[] = [];
+  try {
+    items = await getItems();
+  } catch (err) {
+    console.error("[home] getItems 실패:", err);
+  }
 
   return (
     <>

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import BackHeader from "@/components/BackHeader";
-import { MOCK_ITEMS } from "@/server/mock/items";
+import ReceiveButton from "@/components/items/ReceiveButton";
+import { getItemById } from "@/server/items/queries";
 import { CATEGORY_MAP } from "@/lib/categories";
 
 // Next 16: params 는 Promise → await 로 읽는다
@@ -10,10 +11,11 @@ export default async function ItemDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const item = MOCK_ITEMS.find((i) => i.id === id);
+  const item = await getItemById(id);
   if (!item) notFound();
 
   const cat = CATEGORY_MAP[item.category];
+  const hasPhoto = item.photoUrls.length > 0;
 
   return (
     <div className="flex flex-1 flex-col bg-page">
@@ -22,10 +24,19 @@ export default async function ItemDetailPage({
       <main className="flex-1 pb-28">
         {/* 이미지 (사진 없으면 카테고리 이모지 플레이스홀더) */}
         <div
-          className="relative flex aspect-square w-full items-center justify-center"
+          className="relative flex aspect-square w-full items-center justify-center overflow-hidden"
           style={{ backgroundColor: cat.tint }}
         >
-          <span className="text-[96px]">{cat.emoji}</span>
+          {hasPhoto ? (
+            // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage 원격 URL, next/image 도메인 설정 전까지 img 사용
+            <img
+              src={item.photoUrls[0]}
+              alt={item.name}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="text-[96px]">{cat.emoji}</span>
+          )}
           <span className="absolute left-4 top-4 rounded-full bg-[#F9FFFB]/90 px-3 py-1 text-[12px] font-bold text-ink-60">
             {cat.label}
           </span>
@@ -42,22 +53,36 @@ export default async function ItemDetailPage({
             {item.region}
           </p>
 
+          {/* 물품 설명 (음성 → STT 변환 텍스트) */}
           <div className="mt-6 rounded-2xl bg-chip/60 p-4">
             <p className="text-[13px] leading-6 text-ink-60">
-              물품 설명·기부자 메시지는 준비 중이에요. 등록 시 아이가 녹음한 설명이 여기에 표시될 예정입니다.
+              {item.description?.trim()
+                ? item.description
+                : "아직 등록된 설명이 없어요."}
             </p>
           </div>
+
+          {/* 기부자 편지 (있을 때만) */}
+          {item.donorLetter?.trim() && (
+            <div className="mt-3 rounded-2xl border border-[#FDE3CE] bg-[#FFF1E5] p-4">
+              <p className="mb-1 text-[12px] font-bold text-[#B96A25]">
+                💌 마음을 담은 편지
+              </p>
+              <p className="text-[13px] leading-6 text-[#8A5A2B]">
+                {item.donorLetter}
+              </p>
+            </div>
+          )}
         </div>
       </main>
 
       {/* 하단 고정 CTA */}
       <footer className="fixed bottom-0 left-1/2 z-50 w-full max-w-[var(--frame-max)] -translate-x-1/2 border-t border-line bg-white/90 p-4 pb-[max(16px,env(safe-area-inset-bottom))] backdrop-blur">
-        <button
-          type="button"
-          className="w-full rounded-2xl bg-forest py-4 text-base font-extrabold text-white shadow-[0_4px_20px_rgba(52,103,57,0.35)] transition-transform active:scale-[0.98]"
-        >
-          기부 받기
-        </button>
+        <ReceiveButton
+          itemId={item.id}
+          ownerId={item.ownerId}
+          status={item.status}
+        />
       </footer>
     </div>
   );

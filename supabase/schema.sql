@@ -15,7 +15,7 @@ create table public.items (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid not null references public.users (id) on delete cascade,
   category text not null check (
-    category in ('clothing', 'books_stationery', 'toys', 'sports', 'baby', 'etc')
+    category in ('clothing', 'books', 'toys', 'sports', 'baby', 'etc')
   ),
   name text not null,
   description text, -- 음성 설명 → Whisper STT 변환 결과
