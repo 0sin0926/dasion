@@ -180,6 +180,34 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 
 **⚠️ Supabase 조치 필요**: `supabase/migrations/0004_user_avatar.sql` 실행해야 프로필 **사진 저장**이 동작함(지역 선택은 마이그레이션 없이 바로 됨 — region 컬럼은 기존).
 
+### 2.12 홈 로고 폰트 + 커뮤니티 통계 실연동 (2026-07-29)
+홈 상단 다듬기 + Mock 통계 제거.
+
+- **로고 폰트**: "다시온"을 둥근 한글 폰트 **Jua(주아체)** 로 변경(Google Fonts CDN import). `globals.css`에 `--font-round` 토큰 추가 → `font-round` 유틸로 적용. Jua는 단일 웨이트라 `font-extrabold` 제거, 크기 24→26px.
+- **커뮤니티 통계 실연동**: 히어로 위젯 890/547/678(Mock) → 실제 count. 기부된 물품=`items` 전체 수, 참여 가정=`users`(익명 포함) 전체 수, 나눔 완료=`matches` 수. `getCommunityStats()`(read-client, RLS 공개라 count 가능) 추가, 홈에서 `getItems`와 병렬 조회 후 `HeroSection`에 props 전달. `MOCK_STATS`는 사장(파일 `src/server/mock/items.ts` 잔존, 추후 정리).
+- **홈 동적 렌더**: 통계/피드가 빌드 시점에 고정되지 않도록 `export const dynamic = "force-dynamic"`. (Next 16: `cacheComponents` 미사용이라 기존 route segment config 모델 유효 — 문서 `route-segment-config`에서 확인. 빌드에서 `/`가 ○→ƒ 전환 확인)
+
+구현/변경 파일:
+- `src/app/globals.css` — Jua @import + `--font-round`
+- `src/components/home/HomeHeader.tsx` — 로고 `font-round`
+- `src/server/items/queries.ts` — `getCommunityStats()` + `CommunityStats`
+- `src/components/home/HeroSection.tsx` — `stats` props 수신(Mock import 제거)
+- `src/app/page.tsx` — 통계 병렬 조회 + `force-dynamic`
+- 검증: `tsc`·`build` 통과(`/`=ƒ), dev 홈 200/폰트·라벨 렌더 확인. **Supabase 조치 불필요**(기존 테이블 count만 사용)
+
+### 2.13 상세 기부자 편지 잠금 + 내 물품 수정 (2026-07-29)
+- **기부자 편지 잠금**(상세): 받기 전엔 편지 내용을 숨기고 🔒 "기부를 받고 편지를 확인해봐요!"로 표기(편지가 있는 물품만). 기대감/보상 유도. (추후: 수령자에게는 열람 허용 연결 — `src/app/items/[id]/page.tsx` 주석)
+- **내 물품 수정**: 마이페이지 "기부한" 목록 카드에 "수정" 버튼 → `/items/[id]/edit`. 등록 폼과 동일 스타일로 카테고리·이름·설명·사진 편집. 사진은 기존 URL 유지 + 새 파일만 업로드해 교체. 소유자 확인은 클라이언트(세션)에서, 저장은 `items_update_own` RLS로 이중 보호. **편지 수정은 이번 범위 제외**(letters에 update/delete 정책 없음 → 후속 마이그레이션 필요).
+
+구현/변경 파일:
+- `src/lib/items/updateItem.ts` — 물품 수정(사진 혼합: string=유지/File=업로드)
+- `src/components/items/EditItemForm.tsx` — 수정 폼(프리필 + 소유자 가드)
+- `src/app/items/[id]/edit/page.tsx` — 서버 래퍼(getItemById → 폼)
+- `src/components/my/MyItemCard.tsx` — Link 중첩 제거 + `editable` 시 "수정" 버튼
+- `src/app/my/page.tsx` — 기부한 목록 `editable`
+- `src/app/items/[id]/page.tsx` — 편지 잠금 표기
+- 검증: `tsc`·`build` 통과(`/items/[id]/edit`=ƒ), dev `/my` 200·잘못된 edit id 404. **Supabase 조치 불필요**
+
 ---
 
 ## 3. 주요 결정 사항

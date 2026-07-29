@@ -120,7 +120,12 @@ export default function MyPage() {
               ) : (
                 <div className="space-y-2.5">
                   {donations.map((item) => (
-                    <MyItemCard key={item.id} item={item} badge={ITEM_BADGE[item.status]} />
+                    <MyItemCard
+                      key={item.id}
+                      item={item}
+                      badge={ITEM_BADGE[item.status]}
+                      editable
+                    />
                   ))}
                 </div>
               )
