@@ -52,8 +52,10 @@ export default function GuidedVoiceSheet({
     const pairs = questions
       .map((q) => ({ question: q.text, answer: answers[q.id] ?? "" }))
       .filter((p) => p.answer.trim());
+    console.log("[guide] finish: answers=", answers, "pairs=", pairs);
     if (pairs.length === 0) {
-      onClose();
+      // 답이 하나도 안 담김 → 조용히 닫지 말고 이유를 알려준다.
+      setComposeError("아직 답을 못 들었어요. 마이크를 눌러 대답해줘!");
       return;
     }
     setComposing(true);
@@ -65,6 +67,7 @@ export default function GuidedVoiceSheet({
         body: JSON.stringify({ category, pairs }),
       });
       const data = await res.json();
+      console.log("[guide] compose 응답:", res.status, data);
       if (!res.ok || !data.text) throw new Error(data.error ?? "failed");
       onComplete(data.text as string);
     } catch (e) {

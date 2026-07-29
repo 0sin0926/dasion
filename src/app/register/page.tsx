@@ -6,6 +6,7 @@ import type { CategoryKey } from "@/types/item";
 import { registerItem } from "@/lib/items/registerItem";
 import VoiceMic from "@/components/VoiceMic";
 import GuidedVoiceSheet from "@/components/register/GuidedVoiceSheet";
+import { MicIcon } from "@/components/VoiceIcons";
 
 // stitch 디자인(screen.png / code.html) 그대로. 라벨/이모지도 시안과 동일하게 표기.
 const REG_CATEGORIES: { key: CategoryKey; emoji: string; label: string }[] = [
@@ -152,22 +153,42 @@ export default function RegisterPage() {
             className="w-full rounded-xl border-none bg-[#F3F4F3] px-4 py-3 text-sm placeholder-[#9CA3AF] focus:ring-2 focus:ring-[#3D6B3D] focus:outline-none"
           />
 
-          {/* 음성 입력 카드 (초록) — 녹음 → Gemini STT → 아래 설명란 자동 채움 */}
-          <div className="flex flex-col items-center space-y-4 rounded-2xl border border-[#D9EAD9] bg-[#EFF7EF] p-6">
+          {/* 음성 입력 카드 (초록) — 마이크를 누르면 질문 가이드가 열려 질문→답변 진행 */}
+          <div className="flex flex-col items-center space-y-3 rounded-2xl border border-[#D9EAD9] bg-[#EFF7EF] p-6">
             <p className="text-sm font-bold text-[#2D5A2D]">말씀해보세요!</p>
-            <VoiceMic
-              mode="describe"
-              onResult={setDescription}
-              accent={{ btn: "#3D6B3D", text: "#2D5A2D" }}
-              helper="아이가 직접 자신의 물품에 대해서 설명해보세요."
-            />
             <button
               type="button"
               onClick={() => setGuideOpen(true)}
-              className="w-full rounded-xl border border-[#3D6B3D]/30 bg-white py-2.5 text-[13px] font-bold text-[#3D6B3D]"
+              aria-label="질문 받으며 답하기"
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-[#3D6B3D] shadow-lg transition-transform active:scale-95"
             >
-              🙋 혼자 말하기 어려우면, 질문 받으며 설명하기
+              <MicIcon />
             </button>
+            <div className="text-center">
+              <p className="text-[13px] font-bold text-[#2D5A2D]">
+                마이크를 누르면 질문에 하나씩 답할 수 있어요.
+              </p>
+              <p className="mt-1 text-[11px] text-[#718E71]">
+                질문을 듣고 대답만 하면 설명이 완성돼요!
+              </p>
+            </div>
+          </div>
+
+          {/* 나 혼자 설명하기 (자유 녹음 + 직접 입력) */}
+          <div className="flex items-center gap-2">
+            <span className="h-px flex-1 bg-gray-200" />
+            <span className="text-[12px] font-medium text-[#999999]">
+              또는 나 혼자 설명하기
+            </span>
+            <span className="h-px flex-1 bg-gray-200" />
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <VoiceMic
+              mode="describe"
+              onResult={setDescription}
+              accent={{ btn: "#5E9150", text: "#5B7E4E" }}
+              helper="직접 말해서 설명할래요"
+            />
           </div>
 
           {/* 설명 입력 */}

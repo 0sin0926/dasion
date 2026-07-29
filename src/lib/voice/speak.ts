@@ -4,6 +4,9 @@
 
 import { QUESTION_AUDIO } from "@/lib/voice/questionAudioManifest";
 
+// 사전 생성 오디오가 다소 빠르게 들려서 재생 속도를 살짝 낮춘다(피치는 유지).
+const PLAYBACK_RATE = 0.85;
+
 let currentAudio: HTMLAudioElement | null = null;
 
 function supportsSynth(): boolean {
@@ -22,7 +25,7 @@ function speakWithSynth(text: string) {
   synth.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "ko-KR";
-  u.rate = 0.95;
+  u.rate = 0.9;
   u.pitch = 1.1;
   const v = pickKoreanVoice();
   if (v) u.voice = v;
@@ -37,9 +40,13 @@ export function speakKorean(text: string) {
   const src = QUESTION_AUDIO[text];
   if (src) {
     const audio = new Audio(src);
+    audio.playbackRate = PLAYBACK_RATE;
+    audio.preservesPitch = true;
     currentAudio = audio;
     audio.play().catch((e) => {
-      // 자동재생 차단 등으로 실패하면 브라우저 TTS로 폴백
+      // 우리가 다음 질문으로 교체했거나(멈춤) 중단(AbortError)한 경우는 무시.
+      // 그렇지 않은 진짜 실패(자동재생 차단 등)일 때만 브라우저 TTS로 폴백.
+      if (audio !== currentAudio || e?.name === "AbortError") return;
       console.warn("[speak] 오디오 재생 실패, TTS 폴백:", e);
       speakWithSynth(text);
     });
