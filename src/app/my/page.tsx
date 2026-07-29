@@ -248,14 +248,31 @@ function formatDate(iso: string): string {
 
 /**
  * 받은 편지 카드 — 수혜자가 보낸 감사 편지(recipient_reply)를 편지지 톤(주황)으로 보여준다.
- * 본문을 카드에 그대로 펼쳐 보여주므로 링크로 이동하지 않는다.
- * (물품 상세로 보내면 "받기 전 잠금"된 기부자 편지가 뜨는데, 그건 이 받은 편지와
- *  다른 편지라 오히려 혼란을 준다 — 자기완결형 편지함 카드로 둔다.)
+ * 본문은 기본 2줄 미리보기로 접고, 탭하면 전체를 펼친다(다시 탭하면 접힘).
+ * 편지가 길 수 있어(네다섯 줄) 목록이 늘어지지 않게 하기 위함.
+ * (물품 상세로 링크하면 "받기 전 잠금"된 기부자 편지가 떠서 오해를 주므로 이동은 없다.)
  */
 function LetterCard({ letter }: { letter: ReceivedLetter }) {
   const cat = CATEGORY_MAP[letter.item.category];
+  const [expanded, setExpanded] = useState(false);
+  const [clamped, setClamped] = useState(false); // 접힌 상태에서 본문이 잘리는지(=펼칠 게 있는지)
+  const bodyRef = useRef<HTMLParagraphElement>(null);
+
+  // 최초 렌더(접힘)에서 line-clamp로 잘리는지 측정 → 짧은 편지엔 더보기 미표시
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (el) setClamped(el.scrollHeight > el.clientHeight + 1);
+  }, [letter.content]);
+
+  const toggleable = clamped || expanded;
+
   return (
-    <div className="rounded-2xl border border-[#FDE3CE] bg-[#FFF1E5] p-4 shadow-[0_0.5px_0.5px_0_rgba(0,0,0,0.15)]">
+    <div
+      onClick={toggleable ? () => setExpanded((v) => !v) : undefined}
+      className={`rounded-2xl border border-[#FDE3CE] bg-[#FFF1E5] p-4 shadow-[0_0.5px_0.5px_0_rgba(0,0,0,0.15)] ${
+        toggleable ? "cursor-pointer" : ""
+      }`}
+    >
       <div className="flex items-center justify-between gap-2">
         <p className="flex min-w-0 items-center gap-1.5 text-[12px] font-bold text-[#B96A25]">
           <span className="shrink-0">💌</span>
@@ -270,9 +287,19 @@ function LetterCard({ letter }: { letter: ReceivedLetter }) {
           {formatDate(letter.createdAt)}
         </span>
       </div>
-      <p className="mt-2 whitespace-pre-wrap text-[13px] leading-6 text-[#8A4E18]">
+      <p
+        ref={bodyRef}
+        className={`mt-2 whitespace-pre-wrap text-[13px] leading-6 text-[#8A4E18] ${
+          expanded ? "" : "line-clamp-2"
+        }`}
+      >
         {letter.content}
       </p>
+      {toggleable && (
+        <span className="mt-1.5 inline-block text-[12px] font-bold text-[#B96A25]">
+          {expanded ? "접기 ▲" : "더보기 ▼"}
+        </span>
+      )}
     </div>
   );
 }
