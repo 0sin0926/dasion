@@ -3,15 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { claimItem } from "@/lib/matches/claimItem";
-
-function MicIcon() {
-  return (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-    </svg>
-  );
-}
+import VoiceMic from "@/components/VoiceMic";
 
 interface ReceiveFormProps {
   itemId: string;
@@ -93,24 +85,15 @@ export default function ReceiveForm({
         <section className="space-y-4 rounded-[24px] bg-white p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
           <h2 className="text-lg font-bold">고마운 마음을 전해보세요!</h2>
 
-          {/* 음성 입력 카드 — STT 연결은 다음 증분 */}
+          {/* 음성 입력 카드 (주황) — 녹음 → Gemini STT → 아래 편지란 자동 채움 */}
           <div className="flex flex-col items-center space-y-4 rounded-2xl border border-[#FDE3CE] bg-[#FFF1E5] p-6">
             <p className="text-sm font-bold text-[#B96A25]">말씀해보세요!</p>
-            <button
-              type="button"
-              disabled
-              className="flex h-16 w-16 items-center justify-center rounded-full bg-[#F59E0B] opacity-60 shadow-lg"
-            >
-              <MicIcon />
-            </button>
-            <div className="text-center">
-              <p className="text-[13px] font-bold text-[#B96A25]">
-                물품을 준 친구에게 감사 편지를 전해봐요.
-              </p>
-              <p className="mt-1 text-[11px] text-[#D68D4A]">
-                (음성 인식은 준비 중 — 지금은 아래에 직접 적어주세요)
-              </p>
-            </div>
+            <VoiceMic
+              mode="letter"
+              onResult={setReply}
+              accent={{ btn: "#F59E0B", text: "#B96A25" }}
+              helper="물품을 준 친구에게 감사 편지를 전해봐요."
+            />
           </div>
 
           {/* 편지 입력 */}

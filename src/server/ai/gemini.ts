@@ -49,6 +49,12 @@ export async function generateFromParts(
   const body = await res.json().catch(() => null);
   if (!res.ok) {
     const detail = body?.error?.message ?? null;
+    // 429: 무료 티어 분당 요청 한도(RPM) 초과. 10여 초 뒤 재시도하면 풀리는
+    // 일시적 상황이라 진짜 실패와 구분되는 코드로 던진다.
+    if (res.status === 429) {
+      console.warn("[gemini] rate limited (429):", detail);
+      throw new GeminiError("rate_limited", detail);
+    }
     console.error("[gemini] error", res.status, detail);
     throw new GeminiError("gemini_failed", detail);
   }
@@ -62,7 +68,8 @@ export async function generateFromParts(
 /** GeminiError를 JSON 응답으로 변환(라우트 공용). */
 export function geminiErrorResponse(e: unknown): Response {
   if (e instanceof GeminiError) {
-    const status = e.code === "server_no_key" ? 500 : 502;
+    const status =
+      e.code === "server_no_key" ? 500 : e.code === "rate_limited" ? 429 : 502;
     return Response.json({ error: e.code, detail: e.detail ?? null }, { status });
   }
   console.error("[gemini] unknown 실패:", e);

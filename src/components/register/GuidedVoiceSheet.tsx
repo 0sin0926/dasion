@@ -68,7 +68,17 @@ export default function GuidedVoiceSheet({
       });
       const data = await res.json();
       console.log("[guide] compose 응답:", res.status, data);
-      if (!res.ok || !data.text) throw new Error(data.error ?? "failed");
+      if (!res.ok || !data.text) {
+        const code = data.error ?? "failed";
+        // 429(무료 티어 분당 한도)는 잠깐 뒤 다시 하면 풀린다.
+        if (code === "rate_limited") {
+          console.warn("[guide] compose 사용량 한도(429) — 잠시 후 다시");
+          setComposeError("지금 사용량이 많아요. 10초쯤 뒤에 다시 눌러줘!");
+          setComposing(false);
+          return;
+        }
+        throw new Error(code);
+      }
       onComplete(data.text as string);
     } catch (e) {
       console.error("[guide] compose 실패:", e);

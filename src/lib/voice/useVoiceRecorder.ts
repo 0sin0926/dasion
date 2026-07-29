@@ -50,7 +50,18 @@ export function useVoiceRecorder(opts: {
       form.append("mode", optsRef.current.mode);
       const res = await fetch("/api/stt", { method: "POST", body: form });
       const data = await res.json();
-      if (!res.ok || !data.text) throw new Error(data.error ?? "failed");
+      if (!res.ok || !data.text) {
+        const code = data.error ?? "failed";
+        // 429(무료 티어 분당 한도)는 잠깐 뒤 다시 하면 풀리는 일시적 상황.
+        // 진짜 실패와 다르게 안내하고, 개발 에러 오버레이가 안 뜨게 warn으로 남긴다.
+        if (code === "rate_limited") {
+          console.warn("[voice] stt 사용량 한도(429) — 잠시 후 다시");
+          setError("지금 친구들이 많이 쓰고 있어요. 잠깐 뒤에 다시 눌러줘!");
+          setStatus("error");
+          return;
+        }
+        throw new Error(code);
+      }
       optsRef.current.onResult(data.text as string);
       setStatus("idle");
     } catch (e) {
