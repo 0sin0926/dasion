@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { CategoryKey } from "@/types/item";
 import { registerItem } from "@/lib/items/registerItem";
 import VoiceMic from "@/components/VoiceMic";
+import GuidedVoiceSheet from "@/components/register/GuidedVoiceSheet";
 
 // stitch 디자인(screen.png / code.html) 그대로. 라벨/이모지도 시안과 동일하게 표기.
 const REG_CATEGORIES: { key: CategoryKey; emoji: string; label: string }[] = [
@@ -32,6 +33,7 @@ export default function RegisterPage() {
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleAddPhotos(e: React.ChangeEvent<HTMLInputElement>) {
@@ -128,6 +130,13 @@ export default function RegisterPage() {
               accent={{ btn: "#3D6B3D", text: "#2D5A2D" }}
               helper="아이가 직접 자신의 물품에 대해서 설명해보세요."
             />
+            <button
+              type="button"
+              onClick={() => setGuideOpen(true)}
+              className="w-full rounded-xl border border-[#3D6B3D]/30 bg-white py-2.5 text-[13px] font-bold text-[#3D6B3D]"
+            >
+              🙋 혼자 말하기 어려우면, 질문 받으며 설명하기
+            </button>
           </div>
 
           {/* 설명 입력 */}
@@ -261,6 +270,17 @@ export default function RegisterPage() {
           {submitting ? "등록 중…" : "물품 등록하기"}
         </button>
       </footer>
+
+      {guideOpen && (
+        <GuidedVoiceSheet
+          category={selected}
+          onComplete={(t) => {
+            setDescription(t);
+            setGuideOpen(false);
+          }}
+          onClose={() => setGuideOpen(false)}
+        />
+      )}
     </div>
   );
 }

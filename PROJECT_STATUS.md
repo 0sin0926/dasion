@@ -235,6 +235,19 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 - 기부받기 편지(`src/components/items/ReceiveForm.tsx`)의 마이크도 동일하게 `VoiceMic`로 교체 가능(다음 증분).
 - 녹음 원본 음성 파일(`voice_url`)은 현재 **미저장** — 텍스트만 사용. 필요 시 Storage 업로드 추가.
 
+### 2.16 음성 등록 고도화 — 어미 보정 + 질문 가이드 도우미 + TTS (2026-07-29)
+"안녕"→인형 환각 이슈 대응 + **유아가 스스로 다 설명 못 하는 문제** 해결. 계획: `~/.claude/plans/1-agile-falcon.md`.
+
+- **어미 보정 스타일**(`/api/stt` 프롬프트 재조정): 아이 **단어·순서 유지, 흐린 어미만 보정, 반말 목소리 그대로**. 없는 사실 지어내기 금지 강화. 새 `answer` 모드(질문별 짧은 답 전사). 검증: "안녕"→"안녕!", "빨간색"→"빨간색이야!"
+- **질문 가이드 도우미**(`GuidedVoiceSheet`, 바텀시트): 카테고리별 질문(`src/lib/registerQuestions.ts`)을 하나씩 제시 → 각 질문에 음성 답 → 모아서 `/api/compose`(텍스트→반말 소개글)로 완성. **답변에 있는 내용만 사용**(환각 방지). 등록 폼 초록 카드에 "질문 받으며 설명하기" 버튼으로 진입.
+- **질문 음성 안내(TTS)**: 브라우저 내장 `speechSynthesis`(`src/lib/voice/speak.ts`)로 질문을 소리로 읽어줌(글 못 읽는 유아 접근성) + "🔊 다시 듣기". 무료·오프라인, 한국어 보이스 없으면 조용히 생략.
+- **리팩터/재사용**: Gemini 호출을 공용 헬퍼(`src/server/ai/gemini.ts`)로 추출(`/api/stt`·`/api/compose` 공유). 녹음 로직 `useVoiceRecorder` 훅 + 아이콘 `VoiceIcons.tsx` 공유(VoiceMic·가이드).
+- **검증**: 서버(macOS `say`+curl)로 stt answer/describe·compose(풍부/빈약/빈값 400) 확인, `tsc`·`build` 통과(`/api/compose`=ƒ). ⚠️ **브라우저 마이크·TTS 실제 동작은 수동 테스트 필요**(헤드리스 불가).
+
+**신규**: `src/server/ai/gemini.ts`, `src/app/api/compose/route.ts`, `src/lib/registerQuestions.ts`, `src/lib/voice/{useVoiceRecorder.ts,speak.ts}`, `src/components/{VoiceIcons.tsx, register/GuidedVoiceSheet.tsx}`. **수정**: `src/app/api/stt/route.ts`, `src/components/VoiceMic.tsx`, `src/app/register/page.tsx`.
+
+**남은 조치**: 브라우저 수동 테스트(가이드 낭독+녹음, VoiceMic 리팩터 후 정상). 후속: 편지용 가이드, `voice_url` 저장.
+
 ---
 
 ## 3. 주요 결정 사항
