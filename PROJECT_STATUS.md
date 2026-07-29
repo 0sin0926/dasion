@@ -222,6 +222,19 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 
 **다음**: 등록 폼 마이크(음성 녹음, 현재 비활성) → `/api/stt`(Gemini 오디오 입력) → 텍스트 자동 채움. 이어서 게시글/편지 다듬기 라우트.
 
+### 2.15 음성 등록 — Gemini STT 연결 (2026-07-29)
+등록 폼의 마이크 2개(설명·편지)를 실제 음성→텍스트로 활성화. Gemini가 오디오를 직접 입력받아 **전사 + 글 정리를 한 번의 호출로** 처리(별도 STT+생성 2단계 불필요).
+
+- `src/app/api/stt/route.ts` — POST(FormData: `audio`, `mode`). 오디오를 base64 인라인으로 Gemini(`gemini-flash-latest`)에 전달, `mode`(`describe`/`letter`)별 프롬프트로 정리된 텍스트 반환. 15MB 상한, 키없음/빈오디오/실패 에러코드 분리. "실제로 말한 내용에만 근거, 지어내지 말 것" 프롬프트로 환각 억제.
+- `src/components/VoiceMic.tsx` — 재사용 녹음 버튼. `getUserMedia`+`MediaRecorder`로 녹음(토글: 누르면 시작, 다시 누르면 종료) → `/api/stt` → `onResult`로 텍스트 콜백. 상태(대기/녹음중/변환중/에러) 표시. **녹음 포맷 선호순 mp4 > ogg > webm** — Gemini가 확실히 받는 포맷 우선, Chrome은 webm 폴백.
+- `src/app/register/page.tsx` — disabled 마이크 2개를 `VoiceMic`로 교체(초록=설명→`description`, 주황=편지→`letter`). 결과가 각 textarea에 자동 입력(이후 수동 편집 가능). 미사용 로컬 `MicIcon` 제거.
+- **검증**: 서버 파이프는 macOS `say` 한국어 오디오(aiff·m4a) end-to-end 확인 — 전사+정리 정상 동작. `tsc`·`build` 통과(`/api/stt`=ƒ). ⚠️ **브라우저 실제 녹음(마이크 하드웨어)은 수동 테스트 필요** — 헤드리스로 검증 불가.
+
+**⚠️ 남은 조치**:
+- **Vercel `GEMINI_API_KEY` 등록**(Sensitive OK) — 배포본 음성 기능에 필수. 미등록 시 로컬(localhost)만 동작.
+- 기부받기 편지(`src/components/items/ReceiveForm.tsx`)의 마이크도 동일하게 `VoiceMic`로 교체 가능(다음 증분).
+- 녹음 원본 음성 파일(`voice_url`)은 현재 **미저장** — 텍스트만 사용. 필요 시 Storage 업로드 추가.
+
 ---
 
 ## 3. 주요 결정 사항
@@ -297,7 +310,7 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 - **`0004_user_avatar.sql` 실행 여부 불확실** — 프로필 **사진 저장**이 배포본에서 되는지 확인. 안 되면 Supabase SQL Editor에서 `supabase/migrations/0004_user_avatar.sql` 실행(avatars 버킷 + `users.avatar_url` 컬럼). 지역/수정 등 나머지는 무관하게 동작.
 
 ### 다음 증분 후보 (우선순위 순 제안)
-1. **음성 AI 라우트 (Gemini 연결 완료 — 2.14 참고)** — 파이프는 이미 뚫림(`GEMINI_API_KEY` 로컬 등록·응답 확인). 남은 것: 등록/기부받기 마이크(현재 비활성) 활성화 → `/api/stt`(Gemini 오디오 입력) → 텍스트 자동 채움, 이어서 `/api/generate-post`·`/api/generate-letter`(게시글/편지 다듬기). **⚠️ 선행: Vercel에 `GEMINI_API_KEY` 등록(Sensitive OK, 서버 전용)** — 안 하면 배포본에선 음성 기능 안 됨
+1. **음성 등록 완료 (2.15 참고)** — 등록 폼 마이크(설명·편지)가 실제 Gemini STT로 동작(서버 검증됨). **남은 것: ①Vercel에 `GEMINI_API_KEY` 등록(Sensitive OK) — 배포본 필수 ②브라우저 실제 녹음 수동 테스트 ③기부받기(`ReceiveForm`) 마이크도 `VoiceMic`로 교체**
 2. **수령자 편지 열람** — 지금 전부 잠근 기부자 편지를, 기부 받은 수령자에게는 열리도록(matches 확인). 상세 페이지 주석에 자리 표시됨
 3. **기부자 편지 수정** — 물품 수정 시 편지도 고치려면 `letters`에 update/delete RLS 정책 필요(마이그레이션). 현재 물품 수정은 편지 제외
 4. **AI 프로필 캐릭터 생성** — 마이페이지 "나만의 캐릭터 만들기"(현재 비활성) — 이미지 생성 API

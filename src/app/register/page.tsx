@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CategoryKey } from "@/types/item";
 import { registerItem } from "@/lib/items/registerItem";
+import VoiceMic from "@/components/VoiceMic";
 
 // stitch 디자인(screen.png / code.html) 그대로. 라벨/이모지도 시안과 동일하게 표기.
 const REG_CATEGORIES: { key: CategoryKey; emoji: string; label: string }[] = [
@@ -16,15 +17,6 @@ const REG_CATEGORIES: { key: CategoryKey; emoji: string; label: string }[] = [
 ];
 
 const MAX_PHOTOS = 5;
-
-function MicIcon() {
-  return (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-    </svg>
-  );
-}
 
 interface PhotoItem {
   file: File;
@@ -127,24 +119,15 @@ export default function RegisterPage() {
             className="w-full rounded-xl border-none bg-[#F3F4F3] px-4 py-3 text-sm placeholder-[#9CA3AF] focus:ring-2 focus:ring-[#3D6B3D] focus:outline-none"
           />
 
-          {/* 음성 입력 카드 (초록) — STT 연결은 다음 증분, 지금은 아래에 직접 입력 */}
+          {/* 음성 입력 카드 (초록) — 녹음 → Gemini STT → 아래 설명란 자동 채움 */}
           <div className="flex flex-col items-center space-y-4 rounded-2xl border border-[#D9EAD9] bg-[#EFF7EF] p-6">
             <p className="text-sm font-bold text-[#2D5A2D]">말씀해보세요!</p>
-            <button
-              type="button"
-              disabled
-              className="flex h-16 w-16 items-center justify-center rounded-full bg-[#3D6B3D] opacity-60 shadow-lg"
-            >
-              <MicIcon />
-            </button>
-            <div className="text-center">
-              <p className="text-[13px] font-bold text-[#2D5A2D]">
-                아이가 직접 자신의 물품에 대해서 설명해보세요.
-              </p>
-              <p className="mt-1 text-[11px] text-[#718E71]">
-                (음성 인식은 준비 중 — 지금은 아래에 직접 적어주세요)
-              </p>
-            </div>
+            <VoiceMic
+              mode="describe"
+              onResult={setDescription}
+              accent={{ btn: "#3D6B3D", text: "#2D5A2D" }}
+              helper="아이가 직접 자신의 물품에 대해서 설명해보세요."
+            />
           </div>
 
           {/* 설명 입력 */}
@@ -240,24 +223,15 @@ export default function RegisterPage() {
         <section className="space-y-4 rounded-[24px] bg-white p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
           <h2 className="text-lg font-bold">마음을 함께 전해보세요!</h2>
 
-          {/* 음성 입력 카드 (주황) — STT 연결은 다음 증분 */}
+          {/* 음성 입력 카드 (주황) — 녹음 → Gemini STT → 아래 편지란 자동 채움 */}
           <div className="flex flex-col items-center space-y-4 rounded-2xl border border-[#FDE3CE] bg-[#FFF1E5] p-6">
             <p className="text-sm font-bold text-[#B96A25]">말씀해보세요!</p>
-            <button
-              type="button"
-              disabled
-              className="flex h-16 w-16 items-center justify-center rounded-full bg-[#F59E0B] opacity-60 shadow-lg"
-            >
-              <MicIcon />
-            </button>
-            <div className="text-center">
-              <p className="text-[13px] font-bold text-[#B96A25]">
-                물품을 받을 친구에게 편지도 함께 전달해봐요.
-              </p>
-              <p className="mt-1 text-[11px] text-[#D68D4A]">
-                (음성 인식은 준비 중 — 지금은 아래에 직접 적어주세요)
-              </p>
-            </div>
+            <VoiceMic
+              mode="letter"
+              onResult={setLetter}
+              accent={{ btn: "#F59E0B", text: "#B96A25" }}
+              helper="물품을 받을 친구에게 편지도 함께 전달해봐요."
+            />
           </div>
 
           {/* 편지 입력 */}
