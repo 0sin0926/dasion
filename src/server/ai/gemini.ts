@@ -2,8 +2,8 @@
 // 모델/엔드포인트/키 처리와 에러 매핑을 한곳에 모아 중복을 없앤다.
 
 const BASE = "https://generativelanguage.googleapis.com/v1beta";
-// 안정 별칭 — 항상 최신 flash를 가리켜 특정 버전 폐기에 안 깨진다.
-const MODEL = "models/gemini-flash-latest";
+// gemini-2.5-flash-lite: 오디오 입력 지원 + 무료 티어 한도가 넉넉(경량 모델).
+const MODEL = "models/gemini-2.5-flash-lite";
 
 export type GeminiPart =
   | { text: string }

@@ -271,7 +271,7 @@ Supabase에 end-to-end 검증 완료(익명 로그인→프로필→사진 업�
 | 백엔드 | Next.js API Routes (Spring 아님) | Vercel은 Java 서버리스 미지원, 배포/CORS 관리 부담 ↓, Supabase·OpenAI SDK가 JS 1급 지원 |
 | DB/스토리지 | Supabase (PostgreSQL + Storage + Auth) | 인증+DB+파일 저장을 한 번에 해결 |
 | STT | **Google Gemini API** (기존 계획: OpenAI Whisper) | 무료 티어 + 오디오 직접 입력으로 STT+생성을 한 API로 처리, 사용자 Google 계정 보유 (2.14 참고) |
-| 텍스트 생성 | **Google Gemini** `gemini-flash-latest` (기존 계획: GPT-4o) | STT와 동일 제공자로 통일 |
+| 텍스트 생성 | **Google Gemini** `gemini-2.5-flash-lite` (기존 계획: GPT-4o) | STT와 동일 제공자로 통일. **모델은 무료 티어 한도로 선택**: `gemini-flash-latest`(=3.6-flash)는 무료 분당 20건이라 가이드 STT 연타 시 429, `gemini-2.0-flash`는 무료 0건. `2.5-flash-lite`가 오디오 지원+무료 한도 넉넉 (2.17 참고) |
 | 배포 | Vercel | 프론트+API Routes 동시 배포, 빠른 데모 링크 |
 | AWS 경험 방식 | **MVP 완성 후 AWS 재배포(+S3)** | Next.js 스택 유지한 채 같은 앱을 AWS Amplify에 재배포 + 사진/음성 저장을 S3로 이전. 데모는 Vercel로 안전하게 유지하면서 배포·버킷·IAM을 직접 경험. 비용 ≈ 무료(프리티어). RDS/EC2 풀 전환은 세팅·비용 부담으로 제외 |
 | 홈 디렉터리 git 정리 범위 | 로컬만 정리 | GitHub 원격(4bit_BE)은 팀 공유 저장소라 손대지 않음 |
