@@ -5,6 +5,8 @@ import { CATEGORY_MAP } from "@/lib/categories";
 
 export default function ItemCard({ item }: { item: Item }) {
   const cat = CATEGORY_MAP[item.category];
+  // 이미 나눔된(matched/completed) 물품은 흑백 처리 + "나눔 완료" 표시
+  const done = item.status !== "available";
 
   return (
     // 카드 전체를 상세(/items/[id])로 연결. 피그마: radius 15, 그림자 0 0.5px 0.5px, 내부 gap 5
@@ -14,7 +16,9 @@ export default function ItemCard({ item }: { item: Item }) {
     >
       {/* 이미지 (사진 없으면 카테고리 이모지 플레이스홀더) — radius 20 */}
       <div
-        className="relative flex aspect-square items-center justify-center overflow-hidden rounded-[15px]"
+        className={`relative flex aspect-square items-center justify-center overflow-hidden rounded-[15px] ${
+          done ? "grayscale" : ""
+        }`}
         style={{ backgroundColor: cat.tint }}
       >
         {item.imageUrl ? (
@@ -32,6 +36,12 @@ export default function ItemCard({ item }: { item: Item }) {
         <span className="absolute left-1.5 top-1.5 rounded-full bg-[#F9FFFB]/90 px-2 py-0.5 text-[11px] font-bold text-ink-60">
           {cat.label}
         </span>
+        {/* 나눔 완료 오버레이 */}
+        {done && (
+          <span className="absolute inset-0 flex items-center justify-center bg-black/35 text-[13px] font-extrabold text-white">
+            나눔 완료
+          </span>
+        )}
       </div>
 
       {/* 정보 — 제목 Bold 12 rgba(0,0,0,.68), 위치 Bold 10 rgba(0,0,0,.4) */}
@@ -57,9 +67,16 @@ export default function ItemCard({ item }: { item: Item }) {
       </div>
 
       {/* 기부 받기 — 피그마: #346739, radius 20, 그림자 0 4px 4px rgba(0,0,0,.25), ExtraBold 12 흰글씨
-          (카드 전체가 Link 이므로 button 대신 span 으로 표기) */}
-      <span className="block w-full rounded-[12px] bg-forest py-[7px] text-center text-[12px] font-extrabold text-white shadow-[0_4px_4px_0_rgba(0,0,0,0.25)]">
-        기부 받기
+          (카드 전체가 Link 이므로 button 대신 span 으로 표기)
+          나눔 완료된 물품은 회색으로 비활성 표기 */}
+      <span
+        className={`block w-full rounded-[12px] py-[7px] text-center text-[12px] font-extrabold ${
+          done
+            ? "bg-gray-200 text-gray-400"
+            : "bg-forest text-white shadow-[0_4px_4px_0_rgba(0,0,0,0.25)]"
+        }`}
+      >
+        {done ? "나눔 완료" : "기부 받기"}
       </span>
     </Link>
   );

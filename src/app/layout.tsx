@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AuthBootstrap from "@/components/AuthBootstrap";
 import InAppBrowserBanner from "@/components/InAppBrowserBanner";
+import NotificationBanner from "@/components/NotificationBanner";
 
 export const metadata: Metadata = {
   title: "다시온 — 아이가 전하는 따뜻한 나눔",
@@ -32,6 +33,7 @@ export default function RootLayout({
         <AuthBootstrap />
         <div className="relative mx-auto flex min-h-screen w-full max-w-[var(--frame-max)] flex-col bg-page shadow-[0_0_40px_rgba(0,0,0,0.06)]">
           <InAppBrowserBanner />
+          <NotificationBanner />
           {children}
         </div>
       </body>

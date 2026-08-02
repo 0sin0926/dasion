@@ -24,25 +24,53 @@ export default function ReceiveButton({
   status,
 }: ReceiveButtonProps) {
   const [isOwner, setIsOwner] = useState(false);
+  // 이 물품을 받은 사람이 나인지(내가 기부 받은 물품이면 "내가 받았어요!" 표기)
+  const [isRecipient, setIsRecipient] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    getSupabaseBrowserClient()
-      .auth.getUser()
-      .then(({ data }) => {
-        if (alive) setIsOwner(data.user?.id === ownerId);
-      });
+    const supabase = getSupabaseBrowserClient();
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!alive) return;
+      if (!user) return;
+      setIsOwner(user.id === ownerId);
+
+      // 이미 나눔된 물품이면 내가 그 수령자인지 matches 로 확인
+      if (status !== "available") {
+        const { data } = await supabase
+          .from("matches")
+          .select("id")
+          .eq("item_id", itemId)
+          .eq("recipient_id", user.id)
+          .limit(1)
+          .maybeSingle();
+        if (alive && data) setIsRecipient(true);
+      }
+    })();
     return () => {
       alive = false;
     };
-  }, [ownerId]);
+  }, [ownerId, itemId, status]);
 
   const disabledClass =
     "w-full rounded-2xl bg-gray-200 py-4 text-base font-extrabold text-gray-400";
+  const receivedClass =
+    "w-full rounded-2xl bg-[#EFF7EF] py-4 text-base font-extrabold text-forest";
   const activeClass =
     "block w-full rounded-2xl bg-forest py-4 text-center text-base font-extrabold text-white shadow-[0_4px_20px_rgba(52,103,57,0.35)] transition-transform active:scale-[0.98]";
 
   if (status !== "available") {
+    // 내가 받은 물품이면 완료 문구 대신 받았음을 반갑게 표시
+    if (isRecipient) {
+      return (
+        <button type="button" disabled className={receivedClass}>
+          내가 받았어요! 🎁
+        </button>
+      );
+    }
     return (
       <button type="button" disabled className={disabledClass}>
         이미 나눔이 완료된 물품이에요

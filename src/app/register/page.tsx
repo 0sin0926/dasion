@@ -7,6 +7,7 @@ import { registerItem } from "@/lib/items/registerItem";
 import VoiceMic from "@/components/VoiceMic";
 import GuidedVoiceSheet from "@/components/register/GuidedVoiceSheet";
 import { MicIcon } from "@/components/VoiceIcons";
+import LoginGate from "@/components/LoginGate";
 
 // stitch 디자인(screen.png / code.html) 그대로. 라벨/이모지도 시안과 동일하게 표기.
 const REG_CATEGORIES: { key: CategoryKey; emoji: string; label: string }[] = [
@@ -29,6 +30,8 @@ export default function RegisterPage() {
   const router = useRouter();
   const [selected, setSelected] = useState<CategoryKey | null>(null);
   const [name, setName] = useState("");
+  // '기타' 선택 시 어떤 종류의 물품인지 직접 입력받는 값
+  const [etcKind, setEtcKind] = useState("");
   const [description, setDescription] = useState("");
   const [letter, setLetter] = useState("");
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
@@ -68,13 +71,25 @@ export default function RegisterPage() {
       setError("카테고리를 선택해주세요.");
       return;
     }
+    if (selected === "etc" && !etcKind.trim()) {
+      setError("어떤 종류의 물품인지 적어주세요.");
+      return;
+    }
+
+    // '기타'일 때 입력한 종류를 설명 맨 앞에 붙여 상세에서 함께 보이게 한다.
+    const finalDescription =
+      selected === "etc" && etcKind.trim()
+        ? [`종류: ${etcKind.trim()}`, description.trim()]
+            .filter(Boolean)
+            .join("\n")
+        : description;
 
     setSubmitting(true);
     try {
       await registerItem({
         name,
         category: selected,
-        description,
+        description: finalDescription,
         letter,
         photos: photos.map((p) => p.file),
       });
@@ -92,6 +107,7 @@ export default function RegisterPage() {
   }
 
   return (
+    <LoginGate message="물품을 등록하려면 구글 로그인이 필요해요.">
     <div className="flex flex-1 flex-col bg-[#F5F5F5] text-[#333333]">
       {/* 상단바 */}
       <header className="sticky top-0 z-50 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
@@ -140,6 +156,17 @@ export default function RegisterPage() {
               );
             })}
           </div>
+
+          {/* '기타' 선택 시 — 어떤 종류인지 직접 입력 */}
+          {selected === "etc" && (
+            <input
+              type="text"
+              value={etcKind}
+              onChange={(e) => setEtcKind(e.target.value)}
+              placeholder="어떤 종류의 물품인가요? (예: 킥보드, 우산)"
+              className="w-full rounded-xl border-none bg-[#F3F4F3] px-4 py-3 text-sm placeholder-[#9CA3AF] focus:ring-2 focus:ring-[#3D6B3D] focus:outline-none"
+            />
+          )}
         </section>
 
         {/* 섹션 2 — 물품 정보 */}
@@ -303,5 +330,6 @@ export default function RegisterPage() {
         />
       )}
     </div>
+    </LoginGate>
   );
 }

@@ -1,32 +1,21 @@
 import { getSupabaseBrowserClient } from "./client";
 
 /**
- * 익명 세션을 보장한다.
- * - 이미 세션이 있으면 그대로 사용(같은 기기 = 같은 UUID 유저).
- * - 없으면 익명 로그인으로 새 세션 생성.
- * 반환값: 유저 UUID (실패 시 null).
+ * 현재 로그인된(구글) 세션의 유저 UUID를 반환한다. 로그인 안 돼 있으면 null.
+ * (익명 로그인은 더 이상 사용하지 않는다 — 구글 로그인 전용)
  */
-async function ensureAnonymousSession(): Promise<string | null> {
+export async function getCurrentUserId(): Promise<string | null> {
   const supabase = getSupabaseBrowserClient();
-
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  if (session?.user) return session.user.id;
-
-  const { data, error } = await supabase.auth.signInAnonymously();
-  if (error) {
-    // 대시보드에서 Anonymous sign-ins 가 꺼져 있으면 여기서 실패한다.
-    console.error("[auth] 익명 로그인 실패:", error.message);
-    return null;
-  }
-  return data.user?.id ?? null;
+  return session?.user?.id ?? null;
 }
 
 /**
- * `users` 프로필 행을 보장한다.
- * - 없으면 기본값으로 생성, 이미 있으면(이름 등 저장해둔 값) 그대로 둔다.
- * - items.owner_id 가 users.id 를 참조하므로 물품 등록 전에 반드시 존재해야 한다.
+ * `users` 프로필 행을 보장한다(로그인 유저 한정).
+ * - 없으면 기본값으로 생성(이름=게스트 → 이후 닉네임 설정에서 교체), 있으면 그대로 둔다.
+ * - items.owner_id 등이 users.id 를 참조하므로 쓰기 전에 반드시 존재해야 한다.
  */
 async function ensureProfile(userId: string): Promise<void> {
   const supabase = getSupabaseBrowserClient();
@@ -38,11 +27,11 @@ async function ensureProfile(userId: string): Promise<void> {
 }
 
 /**
- * 앱 진입/쓰기 직전에 호출: 익명 세션 + 프로필 행을 모두 보장하고 유저 UUID를 반환한다.
- * 세션 생성에 실패하면 null.
+ * 앱/쓰기 진입 시 호출: 로그인돼 있으면 프로필 행을 보장하고 UUID를 반환한다.
+ * 로그인 안 돼 있으면 null (익명 세션을 만들지 않는다).
  */
 export async function bootstrapAuth(): Promise<string | null> {
-  const userId = await ensureAnonymousSession();
+  const userId = await getCurrentUserId();
   if (!userId) return null;
   await ensureProfile(userId);
   return userId;

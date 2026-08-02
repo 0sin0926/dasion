@@ -25,10 +25,13 @@ export default function MyItemCard({
   item,
   badge,
   editable = false,
+  onDelete,
 }: {
   item: Item;
   badge: { label: string; tone: "green" | "amber" | "gray" };
   editable?: boolean;
+  /** 삭제 버튼 클릭 시 호출(기부한 목록에서만). 넘기면 삭제 버튼이 나타난다. */
+  onDelete?: (itemId: string) => void;
 }) {
   const cat = CATEGORY_MAP[item.category];
 
@@ -62,12 +65,23 @@ export default function MyItemCard({
       <StatusBadge label={badge.label} tone={badge.tone} />
 
       {editable && (
-        <Link
-          href={`/items/${item.id}/edit`}
-          className="shrink-0 rounded-lg border border-forest/30 px-2.5 py-1 text-[12px] font-bold text-forest"
-        >
-          수정
-        </Link>
+        <div className="flex shrink-0 flex-col gap-1">
+          <Link
+            href={`/items/${item.id}/edit`}
+            className="rounded-lg border border-forest/30 px-2.5 py-1 text-center text-[12px] font-bold text-forest"
+          >
+            수정
+          </Link>
+          {onDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete(item.id)}
+              className="rounded-lg border border-red-200 px-2.5 py-1 text-[12px] font-bold text-red-500"
+            >
+              삭제
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

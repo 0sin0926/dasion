@@ -10,7 +10,7 @@ export interface ClaimItemInput {
 /** claim_item RPC가 raise 하는 에러 코드 → 사용자 안내 메시지 */
 const ERROR_MESSAGES: Record<string, string> = {
   not_authenticated:
-    "로그인 세션을 만들 수 없어요. 잠시 후 다시 시도해주세요.",
+    "로그인이 필요해요. 구글 로그인 후 다시 시도해주세요.",
   item_not_found: "이미 사라졌거나 없는 물품이에요.",
   cannot_claim_own_item: "내가 등록한 물품은 받을 수 없어요.",
   already_taken: "앗, 방금 다른 친구가 받아갔어요.",

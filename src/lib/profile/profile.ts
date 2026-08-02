@@ -10,7 +10,7 @@ export async function getMyProfile(userId: string): Promise<Profile | null> {
   const supabase = getSupabaseBrowserClient();
   const { data, error } = await supabase
     .from("users")
-    .select("id, role, name, region, avatar_url")
+    .select("id, role, name, region, address, avatar_url")
     .eq("id", userId)
     .maybeSingle();
   if (error) throw error;
@@ -21,6 +21,7 @@ export async function getMyProfile(userId: string): Promise<Profile | null> {
     role: UserRole;
     name: string;
     region: string | null;
+    address: string | null;
     avatar_url: string | null;
   };
   return {
@@ -28,6 +29,7 @@ export async function getMyProfile(userId: string): Promise<Profile | null> {
     role: row.role,
     name: row.name,
     region: row.region,
+    address: row.address,
     avatarUrl: row.avatar_url,
   };
 }
@@ -35,6 +37,8 @@ export async function getMyProfile(userId: string): Promise<Profile | null> {
 export interface ProfileUpdate {
   name: string;
   region: string | null;
+  /** 택배 배송용 상세 주소 */
+  address: string | null;
   role: UserRole;
   /** 새 사진 URL. undefined면 사진은 건드리지 않음(기존 유지) */
   avatarUrl?: string | null;
@@ -49,6 +53,7 @@ export async function updateProfile(
   const update: Record<string, unknown> = {
     name: patch.name.trim(),
     region: patch.region?.trim() || null,
+    address: patch.address?.trim() || null,
     role: patch.role,
   };
   // avatarUrl 키가 넘어온 경우에만 사진 컬럼 갱신(undefined면 미변경)

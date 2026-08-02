@@ -25,9 +25,7 @@ export async function registerItem(input: RegisterItemInput): Promise<string> {
 
   const userId = await bootstrapAuth();
   if (!userId) {
-    throw new Error(
-      "로그인 세션을 만들 수 없어요. 잠시 후 다시 시도해주세요. (익명 로그인 설정 확인 필요)",
-    );
+    throw new Error("로그인이 필요해요. 구글 로그인 후 다시 시도해주세요.");
   }
 
   // 1. 사진 업로드 → 공개 URL 수집

@@ -13,6 +13,8 @@ export interface Profile {
   role: UserRole;
   name: string;
   region: string | null;
+  /** 택배 배송용 상세 주소(도로명/상세) */
+  address: string | null;
   avatarUrl: string | null;
 }
 

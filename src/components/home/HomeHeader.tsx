@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function HomeHeader() {
   return (
@@ -16,6 +17,9 @@ export default function HomeHeader() {
           />
         </span>
         <span className="font-round text-[26px] text-forest">다시온</span>
+        <div className="ml-auto">
+          <NotificationBell />
+        </div>
       </div>
 
       {/* 검색창 — 탭하면 /search 로 이동 (피그마: 361×48, radius 10, #F5F5F5, inset 그림자) */}

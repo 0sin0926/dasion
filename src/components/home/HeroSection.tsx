@@ -1,11 +1,13 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { CommunityStats } from "@/server/items/queries";
 
 export default function HeroSection({ stats }: { stats: CommunityStats }) {
-  const STATS = [
-    { value: stats.donated, label: "기부된 물품" },
+  // href 가 있으면 해당 페이지로 이동하는 버튼, 없으면(참여 가정) 단순 표시
+  const STATS: { value: number; label: string; href?: string }[] = [
+    { value: stats.donated, label: "기부된 물품", href: "/items" },
     { value: stats.families, label: "참여 가정" },
-    { value: stats.completed, label: "나눔 완료" },
+    { value: stats.completed, label: "나눔 완료", href: "/items?status=completed" },
   ];
 
   return (
@@ -35,21 +37,36 @@ export default function HeroSection({ stats }: { stats: CommunityStats }) {
         />
       </div>
 
-      {/* 통계 위젯 — 카드 radius 25, 그림자 0 2px 2px rgba(0,0,0,.25), 숫자 ExtraBold 24 #346739, 라벨 Bold 14 #838383 */}
+      {/* 통계 위젯 — 카드 radius 25, 그림자 0 2px 2px rgba(0,0,0,.25), 숫자 ExtraBold 24 #346739, 라벨 Bold 14 #838383
+          링크가 있는 박스(기부된 물품/나눔 완료)는 눌러서 목록으로 이동 */}
       <div className="mt-4 grid grid-cols-3 gap-4">
-        {STATS.map((s) => (
-          <div
-            key={s.label}
-            className="flex flex-col items-center gap-[3px] rounded-[25px] bg-white py-[13px] shadow-[0_2px_2px_0_rgba(0,0,0,0.25)]"
-          >
-            <div className="text-[24px] font-extrabold leading-none text-forest">
-              {s.value.toLocaleString()}
+        {STATS.map((s) => {
+          const inner = (
+            <>
+              <div className="text-[24px] font-extrabold leading-none text-forest">
+                {s.value.toLocaleString()}
+              </div>
+              <div className="text-[14px] font-bold leading-none text-muted">
+                {s.label}
+              </div>
+            </>
+          );
+          const boxClass =
+            "flex flex-col items-center gap-[3px] rounded-[25px] bg-white py-[13px] shadow-[0_2px_2px_0_rgba(0,0,0,0.25)]";
+          return s.href ? (
+            <Link
+              key={s.label}
+              href={s.href}
+              className={`${boxClass} transition-transform active:scale-[0.97]`}
+            >
+              {inner}
+            </Link>
+          ) : (
+            <div key={s.label} className={boxClass}>
+              {inner}
             </div>
-            <div className="text-[14px] font-bold leading-none text-muted">
-              {s.label}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

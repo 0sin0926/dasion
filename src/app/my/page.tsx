@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
 import MyItemCard from "@/components/my/MyItemCard";
 import { bootstrapAuth } from "@/lib/supabase/auth";
+import { getAuthState, signOut } from "@/lib/supabase/authEmail";
 import { getMyProfile, updateProfile } from "@/lib/profile/profile";
+import { isNicknameAvailable, validateNickname } from "@/lib/profile/nickname";
 import { uploadAvatar } from "@/lib/profile/uploadAvatar";
 import { getMyDonations } from "@/lib/items/getMyDonations";
+import { deleteItem } from "@/lib/items/deleteItem";
 import { getMyReceived } from "@/lib/matches/getMyReceived";
 import { getMyReceivedLetters } from "@/lib/letters/getMyReceivedLetters";
 import { CATEGORY_MAP } from "@/lib/categories";
@@ -50,15 +54,48 @@ const MATCH_BADGE: Record<MatchStatus, { label: string; tone: BadgeTone }> = {
 };
 
 export default function MyPage() {
+  const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [auth, setAuth] = useState<{ loggedIn: boolean; email: string | null }>({
+    loggedIn: false,
+    email: null,
+  });
   const [donations, setDonations] = useState<Item[]>([]);
   const [received, setReceived] = useState<ReceivedItem[]>([]);
   const [letters, setLetters] = useState<ReceivedLetter[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [needLogin, setNeedLogin] = useState(false);
   const [tab, setTab] = useState<"donated" | "received" | "letters">("donated");
   const [editing, setEditing] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function handleLogout() {
+    if (!window.confirm("로그아웃할까요?")) return;
+    try {
+      await signOut();
+    } catch (err) {
+      console.error("[my] 로그아웃 실패:", err);
+    }
+    // 로그아웃 후 비로그인 상태로 초기화되도록 새로고침
+    window.location.reload();
+  }
+
+  async function handleDeleteItem(itemId: string) {
+    if (deletingId) return;
+    if (!window.confirm("이 물품을 삭제할까요? 되돌릴 수 없어요.")) return;
+    setDeletingId(itemId);
+    try {
+      await deleteItem(itemId);
+      setDonations((prev) => prev.filter((it) => it.id !== itemId));
+    } catch (err) {
+      console.error("[my] 물품 삭제 실패:", err);
+      window.alert("삭제 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   useEffect(() => {
     let alive = true;
@@ -66,23 +103,25 @@ export default function MyPage() {
       try {
         const uid = await bootstrapAuth();
         if (!uid) {
-          // 세션 생성 실패(예: Supabase 환경변수 누락) → 무한 로딩 대신 에러 표시
-          if (alive) setLoadError(true);
+          // 비로그인 → 구글 로그인 안내 화면
+          if (alive) setNeedLogin(true);
           return;
         }
         if (!alive) return;
         setUserId(uid);
-        const [p, d, r, l] = await Promise.all([
+        const [p, d, r, l, a] = await Promise.all([
           getMyProfile(uid),
           getMyDonations(uid),
           getMyReceived(uid),
           getMyReceivedLetters(uid),
+          getAuthState(),
         ]);
         if (!alive) return;
         setProfile(p);
         setDonations(d);
         setReceived(r);
         setLetters(l);
+        setAuth(a);
       } catch (err) {
         console.error("[my] 데이터 조회 실패:", err);
         if (alive) setLoadError(true);
@@ -106,6 +145,25 @@ export default function MyPage() {
           <p className="px-5 py-16 text-center text-[14px] text-ink-40">
             불러오는 중이에요…
           </p>
+        ) : needLogin ? (
+          <div className="flex flex-col items-center gap-3 px-8 py-20 text-center">
+            <span className="text-5xl">🔑</span>
+            <p className="text-[16px] font-extrabold text-ink">
+              로그인이 필요해요
+            </p>
+            <p className="text-[13px] leading-6 text-ink-40">
+              구글 로그인하면 내 기부·받은 물품과
+              <br />
+              편지·알림을 모아볼 수 있어요.
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push("/login")}
+              className="mt-3 rounded-2xl bg-forest px-8 py-3.5 text-[15px] font-bold text-white"
+            >
+              구글로 로그인하기
+            </button>
+          </div>
         ) : loadError ? (
           <div className="flex flex-col items-center gap-2 px-8 py-16 text-center">
             <span className="text-4xl">😢</span>
@@ -142,6 +200,23 @@ export default function MyPage() {
               />
             )}
 
+            {/* 계정 (로그인됨) */}
+            <div className="flex items-center justify-between rounded-2xl bg-white px-5 py-4 shadow-[0_0.5px_0.5px_0_rgba(0,0,0,0.15)]">
+              <div className="min-w-0">
+                <p className="text-[12px] font-medium text-ink-40">로그인됨</p>
+                <p className="truncate text-[14px] font-bold text-ink">
+                  {auth.email}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="shrink-0 rounded-xl border border-line px-3 py-1.5 text-[13px] font-bold text-ink-40"
+              >
+                로그아웃
+              </button>
+            </div>
+
             {/* 탭 */}
             <div className="flex gap-2 rounded-2xl bg-chip/60 p-1">
               <TabBtn active={tab === "donated"} onClick={() => setTab("donated")}>
@@ -167,6 +242,7 @@ export default function MyPage() {
                       item={item}
                       badge={ITEM_BADGE[item.status]}
                       editable
+                      onDelete={handleDeleteItem}
                     />
                   ))}
                 </div>
@@ -320,9 +396,12 @@ function ProfileCard({
   onSaved: (next: Profile) => void;
 }) {
   const initial = parseRegion(profile.region);
-  const [name, setName] = useState(profile.name);
+  // 기본 닉네임 "게스트"는 실제 값이 아니라 흐린 placeholder로 보이게 해
+  // 빈 칸부터 새로 입력할 수 있도록 한다.
+  const [name, setName] = useState(profile.name === "게스트" ? "" : profile.name);
   const [sido, setSido] = useState(initial.sido);
   const [sigungu, setSigungu] = useState(initial.sigungu);
+  const [address, setAddress] = useState(profile.address ?? "");
   const [role, setRole] = useState<UserRole>(profile.role);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -356,18 +435,42 @@ function ProfileCard({
       setError("이름을 입력해주세요.");
       return;
     }
+    // 닉네임 형식 + 중복 검사(로그인 닉네임 설정과 동일 규칙)
+    const formatError = validateNickname(name);
+    if (formatError) {
+      setError(formatError);
+      return;
+    }
     setSaving(true);
     try {
+      // 닉네임이 바뀐 경우에만 중복 확인(본인 제외)
+      if (name.trim() !== profile.name) {
+        const available = await isNicknameAvailable(userId, name);
+        if (!available) {
+          setError("이미 사용 중인 닉네임이에요. 다른 이름을 정해주세요.");
+          setSaving(false);
+          return;
+        }
+      }
+
       // 새 사진을 골랐으면 먼저 업로드
       let avatarUrl: string | null | undefined;
       if (avatarFile) avatarUrl = await uploadAvatar(userId, avatarFile);
 
       const region = formatRegion(sido, sigungu) || null;
-      await updateProfile(userId, { name, region, role, avatarUrl });
+      const trimmedAddress = address.trim() || null;
+      await updateProfile(userId, {
+        name,
+        region,
+        address: trimmedAddress,
+        role,
+        avatarUrl,
+      });
       onSaved({
         ...profile,
         name: name.trim(),
         region,
+        address: trimmedAddress,
         role,
         avatarUrl: avatarUrl !== undefined ? avatarUrl : profile.avatarUrl,
       });
@@ -398,6 +501,12 @@ function ProfileCard({
             <p className="mt-0.5 text-[13px] font-medium text-ink-40">
               {ROLE_LABEL[profile.role]} · {profile.region || "지역 미설정"}
             </p>
+            {profile.address && (
+              <p className="mt-0.5 flex items-start gap-1 text-[12px] font-medium text-ink-40">
+                <span className="shrink-0">📦</span>
+                <span className="truncate">{profile.address}</span>
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -472,7 +581,7 @@ function ProfileCard({
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="이름을 입력해주세요"
+          placeholder="게스트"
           className="w-full rounded-xl bg-[#F3F4F3] px-4 py-3 text-sm placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-forest"
         />
       </label>
@@ -512,6 +621,19 @@ function ProfileCard({
           </select>
         </div>
       </div>
+
+      <label className="block space-y-1">
+        <span className="text-[13px] font-bold text-ink-60">
+          상세 주소 <span className="font-medium text-ink-40">(택배 받을 곳)</span>
+        </span>
+        <input
+          type="text"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          placeholder="도로명/건물/동·호수까지 적어주세요"
+          className="w-full rounded-xl bg-[#F3F4F3] px-4 py-3 text-sm placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-forest"
+        />
+      </label>
 
       <div className="space-y-1">
         <span className="text-[13px] font-bold text-ink-60">역할</span>

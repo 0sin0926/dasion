@@ -46,7 +46,17 @@ export default async function ItemDetailPage({
         {/* 정보 */}
         <div className="px-5 pt-5">
           <h2 className="text-[22px] font-extrabold text-ink">{item.name}</h2>
-          <p className="mt-2 flex items-center gap-1 text-[14px] font-medium text-ink-40">
+
+          {/* 기부자 닉네임 — 어떤 아이가 나눠준 물품인지 구분되도록 표시 */}
+          <p className="mt-2 flex items-center gap-1.5 text-[14px] font-bold text-forest">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-chip text-[13px]">
+              🙂
+            </span>
+            {item.ownerName}
+            <span className="font-medium text-ink-40">님의 나눔</span>
+          </p>
+
+          <p className="mt-1.5 flex items-center gap-1 text-[14px] font-medium text-ink-40">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
               <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z" />
               <circle cx="12" cy="10" r="2.5" />

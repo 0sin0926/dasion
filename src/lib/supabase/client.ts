@@ -25,7 +25,8 @@ export function getSupabaseBrowserClient(): SupabaseClient {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: false,
+      // 구글 OAuth 리다이렉트 복귀 시 URL의 code를 세션으로 교환해야 하므로 켠다.
+      detectSessionInUrl: true,
     },
   });
   return browserClient;
