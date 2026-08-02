@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { Item, CategoryKey } from "@/types/item";
 import { FILTER_OPTIONS } from "@/lib/categories";
 import ItemCard from "./ItemCard";
@@ -35,9 +36,17 @@ export default function ItemFeed({ items }: { items: Item[] }) {
         })}
       </div>
 
-      {/* 물품 그리드 — 헤딩 Bold 25 rgba(0,0,0,.68), 카드 gap x5 y6 */}
+      {/* 물품 그리드 — "전체보기 >"는 판매(나눔)중 물품만 모아 보는 페이지로 이동 */}
       <div className="px-4 pt-5">
-        <h2 className="mb-3 text-[25px] font-bold text-ink-60">기부 물품</h2>
+        <div className="mb-3 flex justify-start">
+          <Link
+            href="/items?status=available"
+            className="inline-flex items-center gap-0.5 text-[14px] font-medium text-ink-40 transition-colors hover:text-forest"
+          >
+            전체보기
+            <span aria-hidden="true">›</span>
+          </Link>
+        </div>
         {filtered.length === 0 ? (
           <p className="py-10 text-center text-sm text-ink-40">
             해당 카테고리에 등록된 물품이 아직 없어요.

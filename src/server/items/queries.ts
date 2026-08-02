@@ -49,19 +49,27 @@ export async function getItems(category?: CategoryKey): Promise<Item[]> {
   return (data as ItemRow[]).map(toItem);
 }
 
+/** 전체 물품 목록 필터: 상태 무관 / 나눔 완료만 / 나눔 대기(판매중)만 */
+export type AllItemsFilter = "all" | "completed" | "available";
+
 /**
- * 전체 기부 물품 목록(상태 무관, 최신순).
- * onlyCompleted=true 면 이미 나눔된(matched/completed) 물품만 반환한다.
- * (홈 히어로 "기부된 물품"→전체, "나눔 완료"→완료만 이동에 사용)
+ * 전체 기부 물품 목록(최신순).
+ * - "all": 상태 무관
+ * - "completed": 이미 나눔된(matched/completed) 물품만
+ * - "available": 아직 나눔 대기(available)인, 즉 판매(나눔)중인 물품만
+ * (홈 히어로 "기부된 물품"→전체, "나눔 완료"→완료만, 피드 "전체보기"→판매중 이동에 사용)
  */
-export async function getAllItems(onlyCompleted = false): Promise<Item[]> {
+export async function getAllItems(
+  filter: AllItemsFilter = "all",
+): Promise<Item[]> {
   const supabase = createReadClient();
   let query = supabase
     .from("items")
     .select(ITEM_COLUMNS)
     .order("created_at", { ascending: false });
 
-  if (onlyCompleted) query = query.in("status", ["matched", "completed"]);
+  if (filter === "completed") query = query.in("status", ["matched", "completed"]);
+  else if (filter === "available") query = query.eq("status", "available");
 
   const { data, error } = await query;
   if (error) throw error;

@@ -11,7 +11,8 @@ export const dynamic = "force-dynamic";
  * 전체 기부 물품 페이지.
  * - 기본: 모든 물품(상태 무관, 나눔 완료는 흑백 처리)
  * - ?status=completed: 나눔 완료(matched/completed)된 물품만
- * 홈 히어로 통계 박스에서 이 페이지로 이동한다.
+ * - ?status=available: 아직 나눔 대기(판매중)인 물품만
+ * 홈 히어로 통계 박스와 피드 "전체보기"에서 이 페이지로 이동한다.
  */
 export default async function AllItemsPage({
   searchParams,
@@ -19,19 +20,34 @@ export default async function AllItemsPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const { status } = await searchParams;
-  const onlyCompleted = status === "completed";
+  const filter =
+    status === "completed"
+      ? "completed"
+      : status === "available"
+        ? "available"
+        : "all";
 
   let items: Item[] = [];
   try {
-    items = await getAllItems(onlyCompleted);
+    items = await getAllItems(filter);
   } catch (err) {
     console.error("[items] 전체 목록 조회 실패:", err);
   }
 
-  const title = onlyCompleted ? "나눔 완료된 물품" : "전체 기부 물품";
-  const emptyText = onlyCompleted
-    ? "아직 나눔 완료된 물품이 없어요."
-    : "등록된 물품이 아직 없어요.";
+  const title =
+    filter === "completed"
+      ? "나눔 완료된 물품"
+      : filter === "available"
+        ? "나눔 중인 물품"
+        : "전체 기부 물품";
+  const emptyText =
+    filter === "completed"
+      ? "아직 나눔 완료된 물품이 없어요."
+      : filter === "available"
+        ? "지금 나눔 중인 물품이 없어요."
+        : "등록된 물품이 아직 없어요.";
+  const countLabel =
+    filter === "completed" ? "나눔 완료" : filter === "available" ? "나눔 중" : "전체";
 
   return (
     <div className="flex flex-1 flex-col bg-page">
@@ -39,7 +55,7 @@ export default async function AllItemsPage({
       <main className="flex-1 pb-28">
         <div className="px-4 pt-4">
           <p className="text-[13px] font-bold text-ink-40">
-            {onlyCompleted ? "나눔 완료" : "전체"} {items.length}건
+            {countLabel} {items.length}건
           </p>
         </div>
         <AllItemsFeed items={items} emptyText={emptyText} />
